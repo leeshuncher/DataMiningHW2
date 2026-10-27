@@ -10,6 +10,7 @@
 \usepackage{microtype}
 \usepackage{graphicx}
 \usepackage{CJKutf8}
+\usepackage{enumitem}
 \newcommand{\zh}[1]{\begin{CJK}{UTF8}{bsmi}#1\end{CJK}}
 \usepackage{booktabs}
 \usepackage{amsmath}
@@ -367,17 +368,18 @@ Next steps: (i) query analyst labels for the highest-scoring unlabeled transacti
 % ---------------------------------------------------------------------------
 \section*{Contributions of Each Member}
 
-\begin{itemize}\setlength\itemsep{0pt}
-\item \zh{李尚哲} (314580057): baselines (\S6).
-\item \zh{呂丞頤} (314580055): data pipeline (\S3).
-\item \zh{黃駿甯} (314580075): error analysis (\S8).
-\item \zh{吳美真} (414551035): related work (\S1, 2, 9).
-\item \zh{孫傅康} (112550176): EDA (\S4).
-\item \zh{傅維雨} (112550149): ablations (\S7.1).
-\item \zh{張凱華} (315554024): \ours{} method (\S5).
-\item \zh{李玠廷} (315554034): main results (\S7).
+{\raggedright\hyphenpenalty=10000
+\begin{itemize}[leftmargin=*,itemsep=0pt,topsep=2pt]
+\item \zh{李尚哲} (314580057): EDA; vetted the topic.
+\item \zh{呂丞頤} (314580055): assessed candidate topics.
+\item \zh{黃駿甯} (314580075): presentation slides.
+\item \zh{吳美真} (414551035): drafted the paper.
+\item \zh{孫傅康} (112550176): code, slides, coordination.
+\item \zh{傅維雨} (112550149): coordination, paper review.
+\item \zh{張凱華} (315554024): paper review, topic vetting.
+\item \zh{李玠廷} (315554034): obtained the dataset.
 \end{itemize}
-All members: slides, conclusions, proofreading.
+}
 
 \paragraph{AI usage statement.}
 We used Claude Code for code and drafting; the team chose the question and verified every number and citation.
