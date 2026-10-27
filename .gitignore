@@ -1,0 +1,16 @@
+# Data: downloaded by scripts/download_data.py (CC BY-NC-ND 4.0, not redistributed here)
+data/raw/
+data/processed/*.parquet
+
+# Per-transaction test scores (contain dataset labels); regenerate with experiments/run_main.py
+results/scores_test.parquet
+
+# LaTeX build files
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+
+__pycache__/
+*.pyc
