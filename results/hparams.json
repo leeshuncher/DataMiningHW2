@@ -1,0 +1,211 @@
+{
+  "chosen": {
+    "T2 Licit-vs-Unlabeled (ours)": {
+      "features": "LF",
+      "params": {
+        "max_depth": 6,
+        "n_estimators": 300
+      },
+      "val_pr_auc": 0.9013
+    },
+    "T2' IForest (one-class)": {
+      "features": "LF",
+      "params": {
+        "max_samples": 2048
+      },
+      "val_pr_auc": 0.1197
+    }
+  },
+  "grid": {
+    "T2 Licit-vs-Unlabeled (ours)": [
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7259
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8301
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.8737
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.9013
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.8436
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8415
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7543
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8143
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7921
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8054
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.8053
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8031
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7925
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 4,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.8413
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7473
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 6,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.7854
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 100
+        },
+        "val_pr_auc": 0.7819
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_depth": 8,
+          "n_estimators": 300
+        },
+        "val_pr_auc": 0.7908
+      }
+    ],
+    "T2' IForest (one-class)": [
+      {
+        "features": "LF",
+        "params": {
+          "max_samples": 256
+        },
+        "val_pr_auc": 0.1075
+      },
+      {
+        "features": "LF",
+        "params": {
+          "max_samples": 2048
+        },
+        "val_pr_auc": 0.1197
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_samples": 256
+        },
+        "val_pr_auc": 0.1005
+      },
+      {
+        "features": "AF",
+        "params": {
+          "max_samples": 2048
+        },
+        "val_pr_auc": 0.098
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_samples": 256
+        },
+        "val_pr_auc": 0.0991
+      },
+      {
+        "features": "AF+deg",
+        "params": {
+          "max_samples": 2048
+        },
+        "val_pr_auc": 0.0975
+      }
+    ]
+  }
+}
