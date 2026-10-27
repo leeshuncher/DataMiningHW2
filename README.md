@@ -11,7 +11,7 @@ Data Mining HW2 (Anomaly Detection). We detect illicit Bitcoin transactions in t
   licit transactions from unlabeled ones, and its output P(unlabeled | x) is the anomaly score.
   Illicit labels are used only to set the threshold on the validation steps.
 
-Paper: [`paper/main.pdf`](paper/main.pdf). Assignment spec: [`docs/DM-HW2.pdf`](docs/DM-HW2.pdf).
+Paper: [`paper/main.pdf`](paper/main.pdf) (anonymised draft: [`paper/main_review.pdf`](paper/main_review.pdf)). Assignment spec: [`docs/DM-HW2.pdf`](docs/DM-HW2.pdf).
 
 ## Results (test steps 35–49, mean ± std over 5 seeds)
 
@@ -40,6 +40,8 @@ python experiments/analysis.py        # significance, per-step, error analysis, 
 python paper/make_tables.py           # LaTeX tables from results/*.json
 cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
 ```
+
+`paper/main_review.tex` builds the anonymised draft for the LLM TA Judge from the same source: review mode, Team ID as the only author, members shown as Member A–H, no repository link. Build it the same way, with `main_review` in place of `main`.
 
 The split is chronological by time step and is shared by every method:
 

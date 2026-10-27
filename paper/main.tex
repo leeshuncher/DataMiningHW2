@@ -1,7 +1,13 @@
 \documentclass[11pt]{article}
 
-% Use [review] for the anonymised draft sent to the LLM TA Judge, [preprint] for the final report.
-\usepackage[preprint]{acl}
+% main.tex builds the final report; main_review.tex defines \anonymous and builds the
+% anonymised draft for the LLM TA Judge (review mode, Team ID as the only author).
+\ifdefined\anonymous
+  \usepackage[review]{acl}
+  \renewcommand\outauthor{\begin{tabular}[t]{c}\bfseries Team G13\end{tabular}}
+\else
+  \usepackage[preprint]{acl}
+\fi
 
 \usepackage{times}
 \usepackage{latexsym}
@@ -12,6 +18,8 @@
 \usepackage{CJKutf8}
 \usepackage{enumitem}
 \newcommand{\zh}[1]{\begin{CJK}{UTF8}{bsmi}#1\end{CJK}}
+% \member{letter}{name}{student ID}: anonymised as ``Member <letter>'' in the review build.
+\newcommand{\member}[3]{\ifdefined\anonymous Member #1\else\zh{#2} (#3)\fi}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -370,14 +378,14 @@ Next steps: (i) query analyst labels for the highest-scoring unlabeled transacti
 
 {\raggedright\hyphenpenalty=10000
 \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=2pt]
-\item \zh{李尚哲} (314580057): EDA; vetted the topic.
-\item \zh{呂丞頤} (314580055): assessed candidate topics.
-\item \zh{黃駿甯} (314580075): presentation slides.
-\item \zh{吳美真} (414551035): drafted the paper.
-\item \zh{孫傅康} (112550176): code, slides, coordination.
-\item \zh{傅維雨} (112550149): coordination, paper review.
-\item \zh{張凱華} (315554024): paper review, topic vetting.
-\item \zh{李玠廷} (315554034): obtained the dataset.
+\item \member{A}{李尚哲}{314580057}: EDA; vetted the topic.
+\item \member{B}{呂丞頤}{314580055}: assessed candidate topics.
+\item \member{C}{黃駿甯}{314580075}: presentation slides.
+\item \member{D}{吳美真}{414551035}: drafted the paper.
+\item \member{E}{孫傅康}{112550176}: code, slides, coordination.
+\item \member{F}{傅維雨}{112550149}: coordination, paper review.
+\item \member{G}{張凱華}{315554024}: paper review, topic vetting.
+\item \member{H}{李玠廷}{315554034}: obtained the dataset.
 \end{itemize}
 }
 
