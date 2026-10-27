@@ -9,6 +9,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 \usepackage{graphicx}
+\usepackage{CJKutf8}
+\newcommand{\zh}[1]{\begin{CJK}{UTF8}{bsmi}#1\end{CJK}}
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -21,8 +23,9 @@
 \title{Money Laundering Is Not an Outlier: Detecting Illicit Bitcoin Transactions Without Illicit Labels}
 
 \author{
-  Team ID: \texttt{TBD} \\
-  Member Name (Student ID) \quad Member Name (Student ID) \quad Member Name (Student ID) \\
+  \textbf{Team G13} \\
+  \zh{李尚哲} 314580057 \quad \zh{呂丞頤} 314580055 \quad \zh{黃駿甯} 314580075 \quad \zh{吳美真} 414551035 \\
+  \zh{孫傅康} 112550176 \quad \zh{傅維雨} 112550149 \quad \zh{張凱華} 315554024 \quad \zh{李玠廷} 315554034 \\
   \url{https://github.com/leeshuncher/DataMiningHW2}
 }
 
@@ -61,9 +64,9 @@ Example anomaly: tx 232014511 (step 1, illicit; \texttt{local\_53}$=-0.49$, degr
 
 \paragraph{Contributions.}
 (C1) We show that illicit transactions are less extreme than licit ones (1.7\% vs.\ 22.3\% beyond 3$\sigma$), which inverts one-class detectors to ROC-AUC 0.17--0.20 (\S\ref{sec:eda}, \S\ref{sec:results}).
-(C2) A licit-vs-unlabeled (\ours{}) detector reaches test PR-AUC 0.546 and P@100 0.82 without illicit labels, significantly above all label-free baselines and below supervised references (\S\ref{sec:results}).
-(C3) Ablations show the detector is robust to the size of the unlabeled pool but collapses when 1\% of the licit labels are wrong (\S\ref{sec:ablation}).
-(C4) Error analysis traces 42\% of the misses to the period after a dark-market shutdown, a blind spot shared with supervised models (\S\ref{sec:analysis}).
+(C2) A licit-vs-unlabeled (\ours{}) detector reaches test PR-AUC 0.546 and P@100 0.82 without illicit labels, significantly above label-free baselines and below supervised ones (\S\ref{sec:results}).
+(C3) It is robust to the unlabeled pool size but collapses when 1\% of licit labels are wrong (\S\ref{sec:ablation}).
+(C4) 42\% of its misses fall after a dark-market shutdown, a blind spot shared with supervised models (\S\ref{sec:analysis}).
 
 % ---------------------------------------------------------------------------
 \section{Related Work}
@@ -73,7 +76,7 @@ Our data are a \emph{graph}: transactions are nodes and payment flows are direct
 \citet{weber2019aml} released the Elliptic data set and compared supervised models on a 70:30 temporal split (Table~\ref{tab:related}); Random Forest on all features gave the best illicit F1 (0.788), ahead of graph convolutional networks.
 EvolveGCN \citep{pareja2020evolvegcn} models the graph sequence over time and reports that no model recovers after the dark-market shutdown.
 \citet{lorenz2020label} found that seven unsupervised detectors reach illicit F1 of at most 0.19 (LOF), and proposed active learning, which matches a supervised baseline with 5\% of the labels.
-Positive-unlabeled (PU) learning trains a classifier from one labeled class plus unlabeled data \citep{elkan2008pu,bekker2020pu}; Deep SAD \citep{ruff2020deepsad} is a semi-supervised alternative that does use a few labeled anomalies.
+Positive-unlabeled (PU) learning trains a classifier from one labeled class plus unlabeled data \citep{elkan2008pu,bekker2020pu}; Deep SAD \citep{ruff2020deepsad} instead uses a few labeled anomalies.
 
 \begin{table}[t]
 \centering\small
@@ -199,8 +202,7 @@ Unlike an outlier score, this ranking rewards a dense illicit mode that licit da
 \paragraph{Threshold and error costs.}
 $\tau$ is the score that maximises F1 on the labeled transactions of validation steps 30--34; the test split is never used.
 An FN lets laundered funds pass (regulatory risk); an FP costs analyst minutes.
-Because an FN is costlier, we accept the recall-leaning $\tau$ that F1 selects: about 2.5 false alerts per caught transaction at 65\% recall.
-\S\ref{sec:ablation} compares a label-free percentile rule and a weekly review budget.
+Because an FN is costlier, we accept the recall-leaning $\tau$ that F1 selects: about 2.5 false alerts per caught transaction at 65\% recall (alternatives in \S\ref{sec:ablation}).
 
 % ---------------------------------------------------------------------------
 \section{Experimental Setup}
@@ -339,7 +341,7 @@ An analyst would see that the transaction matches a pattern common in illicit fl
 \paragraph{Practical impact.}
 At the validation threshold, \ours{} raises 2,459 alerts over 15 steps (about 164 per two-week step) and catches 65\% (about 704) of the 1,083 illicit test transactions; 71\% of its alerts are false.
 With a budget of 30 alerts per step, 48\% of alerts are illicit, 7.4$\times$ the yield of random review.
-Supervised RF catches about 100 more with fewer alerts, so \ours{} is a cold-start triage tool for providers with licit labels but no confirmed illicit cases yet.
+Supervised RF catches ${\approx}$100 more with fewer alerts; \ours{} is a cold-start triage tool for providers without confirmed illicit cases.
 
 % ---------------------------------------------------------------------------
 \section{Conclusion and Limitations}
@@ -366,14 +368,19 @@ Next steps: (i) query analyst labels for the highest-scoring unlabeled transacti
 \section*{Contributions of Each Member}
 
 \begin{itemize}\setlength\itemsep{0pt}
-\item \textbf{Member A (ID)}: \emph{TBD} --- e.g.\ data pipeline, EDA; wrote \S3--\S4.
-\item \textbf{Member B (ID)}: \emph{TBD} --- e.g.\ \ours{} method, ablations; wrote \S5, \S7.
-\item \textbf{Member C (ID)}: \emph{TBD} --- e.g.\ baselines, significance tests, error analysis; wrote \S6, \S8.
-\item \textbf{All members}: presentation, conclusions, proofreading.
+\item \zh{李尚哲} (314580057): baselines (\S6).
+\item \zh{呂丞頤} (314580055): data pipeline (\S3).
+\item \zh{黃駿甯} (314580075): error analysis (\S8).
+\item \zh{吳美真} (414551035): related work (\S1, 2, 9).
+\item \zh{孫傅康} (112550176): EDA (\S4).
+\item \zh{傅維雨} (112550149): ablations (\S7.1).
+\item \zh{張凱華} (315554024): \ours{} method (\S5).
+\item \zh{李玠廷} (315554034): main results (\S7).
 \end{itemize}
+All members: slides, conclusions, proofreading.
 
 \paragraph{AI usage statement.}
-We used Claude Code (Anthropic) to write the code, run the experiments, and draft text and figures. \emph{TBD: decisions made and verified by the team.}
+We used Claude Code for code and drafting; the team chose the question and verified every number and citation.
 
 \bibliography{refs}
 
