@@ -1,0 +1,10 @@
+\begin{tabular}{@{}clrrcccl@{}}
+\toprule
+\# & Type & txId & Step & $s(x)$ & Top-SHAP feature & RF & Likely cause \\
+\midrule
+1 & FN & 97069571 & 40 & 0.014 & local\_48$=0.09$ & 0.04 & licit-typical profile \\
+2 & FN & 73003591 & 42 & 0.970 & local\_53$=-0.49$ & 0.76 & 73/93 features equal \#4 \\
+3 & FP & 169360875 & 45 & 1.000 & local\_53$=-0.49$ & 0.03 & licit tx in illicit mode \\
+4 & FP & 73160604 & 42 & 0.970 & local\_53$=-0.49$ & 0.41 & 73/93 features equal \#2 \\
+\bottomrule
+\end{tabular}
