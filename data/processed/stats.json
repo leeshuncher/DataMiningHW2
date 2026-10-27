@@ -1,0 +1,50 @@
+{
+  "n_features": 166,
+  "n_edges": 234355,
+  "time_steps": [
+    1,
+    49
+  ],
+  "splits": {
+    "train": {
+      "time_steps": [
+        1,
+        29
+      ],
+      "transactions": 120804,
+      "illicit": 2871,
+      "licit": 23510,
+      "unknown": 94423,
+      "illicit_ratio_of_labeled": 0.1088
+    },
+    "val": {
+      "time_steps": [
+        30,
+        34
+      ],
+      "transactions": 15461,
+      "illicit": 591,
+      "licit": 2922,
+      "unknown": 11948,
+      "illicit_ratio_of_labeled": 0.1682
+    },
+    "test": {
+      "time_steps": [
+        35,
+        49
+      ],
+      "transactions": 67504,
+      "illicit": 1083,
+      "licit": 15587,
+      "unknown": 50834,
+      "illicit_ratio_of_labeled": 0.065
+    }
+  },
+  "overall": {
+    "transactions": 203769,
+    "illicit": 4545,
+    "licit": 42019,
+    "unknown": 157205,
+    "illicit_ratio_of_labeled": 0.0976
+  }
+}

@@ -1,0 +1,50 @@
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 4, 'n_estimators': 100}} 0.7259
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 4, 'n_estimators': 300}} 0.8301
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 6, 'n_estimators': 100}} 0.8737
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 6, 'n_estimators': 300}} 0.9013
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 8, 'n_estimators': 100}} 0.8436
+T2 Licit-vs-Unlabeled (ours) {'features': 'LF', 'params': {'max_depth': 8, 'n_estimators': 300}} 0.8415
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 4, 'n_estimators': 100}} 0.7543
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 4, 'n_estimators': 300}} 0.8143
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 6, 'n_estimators': 100}} 0.7921
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 6, 'n_estimators': 300}} 0.8054
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 8, 'n_estimators': 100}} 0.8053
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF', 'params': {'max_depth': 8, 'n_estimators': 300}} 0.8031
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 4, 'n_estimators': 100}} 0.7925
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 4, 'n_estimators': 300}} 0.8413
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 6, 'n_estimators': 100}} 0.7473
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 6, 'n_estimators': 300}} 0.7854
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 8, 'n_estimators': 100}} 0.7819
+T2 Licit-vs-Unlabeled (ours) {'features': 'AF+deg', 'params': {'max_depth': 8, 'n_estimators': 300}} 0.7908
+T2' IForest (one-class) {'features': 'LF', 'params': {'max_samples': 256}} 0.1075
+T2' IForest (one-class) {'features': 'LF', 'params': {'max_samples': 2048}} 0.1197
+T2' IForest (one-class) {'features': 'AF', 'params': {'max_samples': 256}} 0.1005
+T2' IForest (one-class) {'features': 'AF', 'params': {'max_samples': 2048}} 0.098
+T2' IForest (one-class) {'features': 'AF+deg', 'params': {'max_samples': 256}} 0.0991
+T2' IForest (one-class) {'features': 'AF+deg', 'params': {'max_samples': 2048}} 0.0975
+T1a random 0 {'pr_auc': 0.064, 'roc_auc': 0.492, 'f1': 0.122, 'precision': 0.065, 'recall': 0.996, 'p_at_k': 0.06, 'alerts': 16619}
+T1a random 1 {'pr_auc': 0.065, 'roc_auc': 0.505, 'f1': 0.122, 'precision': 0.065, 'recall': 0.98, 'p_at_k': 0.06, 'alerts': 16325}
+T1a random 2 {'pr_auc': 0.063, 'roc_auc': 0.487, 'f1': 0.122, 'precision': 0.065, 'recall': 0.997, 'p_at_k': 0.08, 'alerts': 16593}
+T1a random 3 {'pr_auc': 0.065, 'roc_auc': 0.497, 'f1': 0.122, 'precision': 0.065, 'recall': 1.0, 'p_at_k': 0.03, 'alerts': 16666}
+T1a random 4 {'pr_auc': 0.065, 'roc_auc': 0.495, 'f1': 0.122, 'precision': 0.065, 'recall': 0.978, 'p_at_k': 0.07, 'alerts': 16291}
+T1b 3-sigma 0 {'pr_auc': 0.053, 'roc_auc': 0.326, 'f1': 0.01, 'precision': 0.007, 'recall': 0.023, 'p_at_k': 0.04, 'alerts': 3748}
+T2' IForest (one-class) 0 {'pr_auc': 0.038, 'roc_auc': 0.171, 'f1': 0.122, 'precision': 0.065, 'recall': 1.0, 'p_at_k': 0.0, 'alerts': 16664}
+T2' IForest (one-class) 1 {'pr_auc': 0.038, 'roc_auc': 0.185, 'f1': 0.122, 'precision': 0.065, 'recall': 0.999, 'p_at_k': 0.0, 'alerts': 16669}
+T2' IForest (one-class) 2 {'pr_auc': 0.037, 'roc_auc': 0.169, 'f1': 0.122, 'precision': 0.065, 'recall': 0.997, 'p_at_k': 0.0, 'alerts': 16654}
+T2' IForest (one-class) 3 {'pr_auc': 0.038, 'roc_auc': 0.164, 'f1': 0.122, 'precision': 0.065, 'recall': 0.999, 'p_at_k': 0.0, 'alerts': 16669}
+T2' IForest (one-class) 4 {'pr_auc': 0.038, 'roc_auc': 0.163, 'f1': 0.117, 'precision': 0.062, 'recall': 0.956, 'p_at_k': 0.0, 'alerts': 16620}
+T2 Licit-vs-Unlabeled (ours) 0 {'pr_auc': 0.533, 'roc_auc': 0.865, 'f1': 0.417, 'precision': 0.311, 'recall': 0.633, 'p_at_k': 0.81, 'alerts': 2203}
+T2 Licit-vs-Unlabeled (ours) 1 {'pr_auc': 0.536, 'roc_auc': 0.863, 'f1': 0.391, 'precision': 0.278, 'recall': 0.655, 'p_at_k': 0.82, 'alerts': 2548}
+T2 Licit-vs-Unlabeled (ours) 2 {'pr_auc': 0.585, 'roc_auc': 0.869, 'f1': 0.388, 'precision': 0.269, 'recall': 0.699, 'p_at_k': 0.86, 'alerts': 2816}
+T2 Licit-vs-Unlabeled (ours) 3 {'pr_auc': 0.515, 'roc_auc': 0.863, 'f1': 0.404, 'precision': 0.307, 'recall': 0.592, 'p_at_k': 0.8, 'alerts': 2089}
+T2 Licit-vs-Unlabeled (ours) 4 {'pr_auc': 0.562, 'roc_auc': 0.865, 'f1': 0.392, 'precision': 0.277, 'recall': 0.674, 'p_at_k': 0.82, 'alerts': 2639}
+T3a RandomForest (sup.) 0 {'pr_auc': 0.764, 'roc_auc': 0.885, 'f1': 0.42, 'precision': 0.29, 'recall': 0.761, 'p_at_k': 1.0, 'alerts': 2844}
+T3a RandomForest (sup.) 1 {'pr_auc': 0.767, 'roc_auc': 0.892, 'f1': 0.5, 'precision': 0.374, 'recall': 0.752, 'p_at_k': 1.0, 'alerts': 2176}
+T3a RandomForest (sup.) 2 {'pr_auc': 0.769, 'roc_auc': 0.893, 'f1': 0.796, 'precision': 0.909, 'recall': 0.708, 'p_at_k': 1.0, 'alerts': 844}
+T3a RandomForest (sup.) 3 {'pr_auc': 0.765, 'roc_auc': 0.888, 'f1': 0.561, 'precision': 0.452, 'recall': 0.739, 'p_at_k': 1.0, 'alerts': 1770}
+T3a RandomForest (sup.) 4 {'pr_auc': 0.772, 'roc_auc': 0.896, 'f1': 0.429, 'precision': 0.298, 'recall': 0.76, 'p_at_k': 1.0, 'alerts': 2758}
+T3b XGBoost (sup.) 0 {'pr_auc': 0.789, 'roc_auc': 0.921, 'f1': 0.645, 'precision': 0.567, 'recall': 0.747, 'p_at_k': 1.0, 'alerts': 1426}
+T3b XGBoost (sup.) 1 {'pr_auc': 0.791, 'roc_auc': 0.922, 'f1': 0.66, 'precision': 0.589, 'recall': 0.75, 'p_at_k': 1.0, 'alerts': 1379}
+T3b XGBoost (sup.) 2 {'pr_auc': 0.791, 'roc_auc': 0.922, 'f1': 0.765, 'precision': 0.8, 'recall': 0.733, 'p_at_k': 1.0, 'alerts': 992}
+T3b XGBoost (sup.) 3 {'pr_auc': 0.788, 'roc_auc': 0.919, 'f1': 0.706, 'precision': 0.675, 'recall': 0.74, 'p_at_k': 1.0, 'alerts': 1187}
+T3b XGBoost (sup.) 4 {'pr_auc': 0.791, 'roc_auc': 0.924, 'f1': 0.602, 'precision': 0.501, 'recall': 0.754, 'p_at_k': 1.0, 'alerts': 1632}
