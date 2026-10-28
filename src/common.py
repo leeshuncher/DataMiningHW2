@@ -221,6 +221,21 @@ def best_f1_threshold(y, s):
     return float(t[np.argmax(f1)])
 
 
+def min_cost_threshold(y, s, cost_ratio):
+    """tau minimizing cost_ratio * FN + FP on a labeled validation set (alert if s >= tau).
+
+    cost_ratio = c_FN / c_FP, the cost of a missed illicit transaction in units of one
+    false alert. Returns inf (no alerts) when alerting on nothing is cheapest.
+    """
+    order = np.argsort(-s, kind="stable")
+    ys, ss = y[order], s[order]
+    tp, fp = np.cumsum(ys), np.cumsum(1 - ys)
+    cost = cost_ratio * (ys.sum() - tp) + fp  # cost of alerting on the top-k, k = 1..n
+    boundary = np.r_[ss[1:] != ss[:-1], True]  # ties share one threshold
+    k = int(np.argmin(np.where(boundary, cost, np.inf)))
+    return float(ss[k]) if cost[k] < cost_ratio * ys.sum() else float("inf")
+
+
 def precision_at_k(y, s, k=REVIEW_BUDGET):
     top = np.argsort(-s, kind="stable")[:k]
     return float(np.mean(y[top]))

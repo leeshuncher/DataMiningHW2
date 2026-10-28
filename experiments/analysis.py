@@ -194,6 +194,41 @@ def practical_impact(main, scores):
     return out
 
 
+def bootstrap_std(scores):
+    """Std of test PR-AUC over bootstrap resamples (seed-mean score), per method.
+
+    Used as the uncertainty of deterministic methods, which have no seed variation.
+    """
+    y = scores["label"].to_numpy()
+    rng = np.random.default_rng(1)
+    idx = [rng.integers(0, len(y), len(y)) for _ in range(N_BOOT)]
+    out = {}
+    for name in sorted({c.split("|")[0] for c in scores.columns if "|" in c}):
+        S, _ = seed_mean_scores(scores, name)
+        out[name] = float(np.std([np.mean([average_precision_score(y[i], S[i, j]) for j in range(S.shape[1])])
+                                  for i in idx]))
+    return out
+
+
+def budget_comparison(scores, budget=30):
+    """Alerts on the top-`budget` labeled test transactions of every step, per method (seed mean)."""
+    y, steps = scores["label"].to_numpy(), scores["time_step"].to_numpy()
+    out = {}
+    for name in [OURS, "T3a RandomForest (sup.)", "T3b XGBoost (sup.)"]:
+        S, _ = seed_mean_scores(scores, name)
+        caught = []
+        for j in range(S.shape[1]):
+            hit = 0
+            for t in np.unique(steps):
+                i = np.where(steps == t)[0]
+                hit += y[i[np.argsort(-S[i, j])[:budget]]].sum()
+            caught.append(hit)
+        alerts = sum(min(budget, int((steps == t).sum())) for t in np.unique(steps))
+        out[name] = {"alerts": alerts, "caught": float(np.mean(caught)),
+                     "precision": float(np.mean(caught) / alerts), "recall": float(np.mean(caught) / y.sum())}
+    return out
+
+
 def main():
     FIGURES.mkdir(exist_ok=True)
     main_res = json.loads((RESULTS / "main.json").read_text())
@@ -205,6 +240,8 @@ def main():
         "pr_auc_shutdown": pre_post_shutdown(scores),
         "error_analysis": error_analysis(nodes, main_res, scores),
         "impact": practical_impact(main_res, scores),
+        "impact_budget30": budget_comparison(scores),
+        "bootstrap_std": bootstrap_std(scores),
     }
     save_json(out, "analysis.json")
     print(json.dumps(out["error_analysis"]["profile"], indent=1))

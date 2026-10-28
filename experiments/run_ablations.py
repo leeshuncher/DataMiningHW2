@@ -5,7 +5,13 @@ A1 contamination   share of illicit rows hidden in the licit side: 0/1/5/10 %
 A2 unlabeled pool  fraction of the unlabeled train pool used: 5/25/50/100 %
 A3 scoring family  label-free detectors on the same features
 A4 feature set     LF / AF / AF+deg / AF+2hop
-A5 threshold rule  best-F1 on val / 95th pct of licit-train scores / weekly review budget
+A5 threshold rule  best-F1 on val / min. cost r*FN + FP on val (r = 1, 5, 10, 20) /
+                   95th pct of licit-train scores / weekly review budget
+T3 features        supervised RF and XGBoost on LF, the feature set LvU uses (control)
+
+Every row also reports validation PR-AUC. Deterministic rows report the std of test
+PR-AUC over 1,000 bootstrap resamples of the test set instead of a seed std.
+No ablation result is used to choose the configuration (fixed on validation in run_main.py).
 
 Output: results/ablations.json
 """
@@ -20,11 +26,15 @@ import numpy as np
 from sklearn.neighbors import LocalOutlierFactor, NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 
-from common import (FEATURE_SETS, RESULTS, SEEDS, IForest, LicitVsUnlabeled, Mahalanobis,
-                    best_f1_threshold, evaluate, labeled, load_nodes, one_class_train, pu_train,
-                    save_json)
+from sklearn.metrics import average_precision_score
+
+from common import (FEATURE_SETS, RESULTS, SEEDS, IForest, LicitVsUnlabeled, Mahalanobis, RandomForest,
+                    XGBoost, best_f1_threshold, evaluate, labeled, load_nodes, min_cost_threshold,
+                    one_class_train, pu_train, save_json)
 
 WEEKLY_BUDGET = 30  # alerts analysts can review per time step (~2 weeks of data)
+COST_RATIOS = [1, 5, 10, 20]  # c_FN / c_FP
+N_BOOT = 1000
 
 
 class LOFNovelty:
@@ -70,6 +80,9 @@ def run(nodes, cols, build, seeds, tau_rule="best_f1"):
         if tau_rule == "best_f1":
             tau = best_f1_threshold(y_val, s_val)
             m = evaluate(y_test, s_test, tau)
+        elif tau_rule.startswith("cost_"):
+            tau = min_cost_threshold(y_val, s_val, float(tau_rule.split("_")[1]))
+            m = evaluate(y_test, s_test, tau)
         elif tau_rule == "licit_p95":
             licit_train = one_class_train(nodes)[cols].to_numpy()
             tau = float(np.percentile(model.score(licit_train), 95))
@@ -83,10 +96,16 @@ def run(nodes, cols, build, seeds, tau_rule="best_f1"):
                 pred[idx[np.argsort(-s_test[idx])[:WEEKLY_BUDGET]]] = 1
             tau = None
             m = evaluate(y_test, s_test + 1e9 * pred, 1e9)  # alerts = budgeted rows
-        runs.append(m | {"tau": tau})
-    keys = ["pr_auc", "roc_auc", "f1", "precision", "recall", "p_at_k", "alerts"]
-    return {k: {"mean": float(np.mean([r[k] for r in runs])), "std": float(np.std([r[k] for r in runs]))}
-            for k in keys}
+        runs.append(m | {"tau": tau, "val_pr_auc": float(average_precision_score(y_val, s_val))})
+    keys = ["pr_auc", "roc_auc", "f1", "precision", "recall", "p_at_k", "alerts", "val_pr_auc"]
+    out = {k: {"mean": float(np.mean([r[k] for r in runs])), "std": float(np.std([r[k] for r in runs]))}
+           for k in keys}
+    if len(seeds) == 1:  # deterministic: uncertainty from resampling the test set
+        rng = np.random.default_rng(0)
+        boot = [average_precision_score(y_test[i], s_test[i])
+                for i in (rng.integers(0, len(y_test), len(y_test)) for _ in range(N_BOOT))]
+        out["pr_auc"]["boot_std"] = float(np.std(boot))
+    return out
 
 
 def main():
@@ -130,9 +149,17 @@ def main():
                                      lambda s, c=FEATURE_SETS[fs]: pu(s, cols=c), SEEDS)
         print("A4", fs, out["A4_features"][fs]["pr_auc"])
 
-    out["A5_threshold"] = {rule: run(nodes, cols, pu, SEEDS, tau_rule=rule)
-                           for rule in ["best_f1", "licit_p95", "weekly_budget"]}
-    print("A5", {k: v["f1"]["mean"] for k, v in out["A5_threshold"].items()})
+    rules = ["best_f1"] + [f"cost_{r}" for r in COST_RATIOS] + ["licit_p95", "weekly_budget"]
+    out["A5_threshold"] = {rule: run(nodes, cols, pu, SEEDS, tau_rule=rule) for rule in rules}
+    print("A5", {k: (round(v["alerts"]["mean"]), round(v["f1"]["mean"], 3)) for k, v in out["A5_threshold"].items()})
+
+    train = labeled(nodes, "train")
+    X_lf, y_tr = train[FEATURE_SETS["LF"]].to_numpy(), train["label"].to_numpy()
+    out["T3_features"] = {
+        "RF, LF": run(nodes, FEATURE_SETS["LF"], lambda s: RandomForest(seed=s).fit(X_lf, y_tr), SEEDS),
+        "XGBoost, LF": run(nodes, FEATURE_SETS["LF"], lambda s: XGBoost(seed=s).fit(X_lf, y_tr), SEEDS),
+    }
+    print("T3 on LF", {k: v["pr_auc"] for k, v in out["T3_features"].items()})
 
     save_json(out, "ablations.json")
 
