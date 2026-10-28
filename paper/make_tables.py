@@ -51,27 +51,47 @@ def data_table():
         *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
+CONV_NAME = {"gcn": "GCN", "sage": "GraphSAGE"}
+
+
 def main_table():
-    main, ana = load("main.json"), load("analysis.json")
-    cols = ["pr_auc", "roc_auc", "f1", "p_at_k"]
-    best = {c: max(main[n]["summary"][c]["mean"] for n in main) for c in cols}
+    main, ana, gnn = load("main.json"), load("analysis.json"), load("gnn.json")
     pre = ana["pr_auc_shutdown"]
-    best_pre = max(v["before"] for v in pre.values())
-    rows = []
+    # (tier, label, summary, PR-AUC before / from the shutdown), in table order; None = rule.
+    entries = []
     for name, (tier, label) in DISPLAY.items():
-        s = main[name]["summary"]
+        if tier == "T2":
+            g = gnn["T2'' LvU-GNN"]
+            entries.append(("T2$''$", f"LvU-{CONV_NAME[g['config']['conv']]}", g["summary"],
+                            g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"]))
+        entries.append((tier, label, main[name]["summary"], pre[name]["before"], pre[name]["from"]))
+        if tier in ("T1b", "T2"):
+            entries.append(None)
+    g = gnn["T3c GNN (sup.)"]
+    entries.append(("T3c", f"{CONV_NAME[g['config']['conv']]} (sup.)", g["summary"],
+                    g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"]))
+
+    cols = ["pr_auc", "roc_auc", "f1", "p_at_k"]
+    rows_ = [e for e in entries if e]
+    best = {c: max(e[2][c]["mean"] for e in rows_) for c in cols}
+    best_pre = max(e[3] for e in rows_)
+    rows = []
+    for e in entries:
+        if e is None:
+            rows.append(r"\midrule")
+            continue
+        tier, label, s, before, after = e
         cells = []
         for c in cols:
             v = pm(s[c])
             cells.append(rf"\textbf{{{v}}}" if abs(s[c]["mean"] - best[c]) < 1e-9 else v)
-        p = f"{pre[name]['before']:.3f}"
-        cells.append(rf"\textbf{{{p}}}" if abs(pre[name]["before"] - best_pre) < 1e-9 else p)
-        cells.append(f"{pre[name]['from']:.3f}")
-        cells.append(f"{s['fit_s']['mean']:.1f}")
+        p = f"{before:.3f}"
+        cells.append(rf"\textbf{{{p}}}" if abs(before - best_pre) < 1e-9 else p)
+        cells.append(f"{after:.3f}")
+        fit = s["fit_s"]["mean"]
+        cells.append(f"{fit:.0f}" if fit >= 10 else f"{fit:.1f}")
         cells.append(f"{1000 * s['ms_per_sample']['mean']:.1f}")
         rows.append(f"{tier} & {label} & " + " & ".join(cells) + r" \\")
-        if tier in ("T1b", "T2"):
-            rows.append(r"\midrule")
     prev = pre[OURS]
     write("main.tex", "\n".join([
         r"\begin{tabular}{@{}llcccccccc@{}}", r"\toprule",
@@ -113,18 +133,6 @@ def ablation_table():
         *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
-def threshold_table():
-    ab = load("ablations.json")["A5_threshold"]
-    labels = {"best_f1": r"best F1 on val (ours)", "licit_p95": r"95th pct.\ licit train",
-              "weekly_budget": r"top-30 per time step"}
-    rows = [f"{labels[k]} & {m['alerts']['mean']:.0f} & {m['precision']['mean']:.3f} & {m['recall']['mean']:.3f} & {m['f1']['mean']:.3f} \\\\"
-            for k, m in ab.items()]
-    write("threshold.tex", "\n".join([
-        r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
-        r"$\tau$ rule & Alerts & Precision & Recall & F1 \\", r"\midrule",
-        *rows, r"\bottomrule", r"\end{tabular}", ""]))
-
-
 CAUSES = {
     "FN (inversion)": "licit-typical profile",
     "FN (near miss)": "73/93 features equal \\#4",
@@ -151,5 +159,4 @@ if __name__ == "__main__":
     data_table()
     main_table()
     ablation_table()
-    threshold_table()
     cases_table()
