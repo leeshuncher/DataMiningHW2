@@ -97,7 +97,7 @@ def ablation_table():
           "One-class LOF": "one-class LOF", "PU kNN density ratio": "PU $k$NN ratio",
           "PU classifier (ours)": "PU classifier (ours)"}),
         ("A4: feature set", "A4_features",
-         {"LF": "LF, 93 local (ours)", "AF": "AF (+72 aggregates)", "AF+deg": "AF + in/out degree"}),
+         {"LF": "LF, 93 local (ours)", "AF": "AF (+72 aggregates)", "AF+deg": "AF + in/out degree", "AF+2hop": "AF + 2-hop aggregates"}),
     ]
     rows = []
     for title, key, labels in groups:
