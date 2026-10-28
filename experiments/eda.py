@@ -13,11 +13,12 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.stats import ks_2samp
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif
 
-from common import AGG, FIGURES, GRAPH, HOP2, LOCAL, load_nodes, save_json
+from common import AGG, FIGURES, GRAPH, HOP2, LOCAL, PROCESSED, load_nodes, save_json
 
 plt.rcParams.update({"font.size": 8, "figure.dpi": 150})
 LICIT_C, ILLICIT_C = "#4C78A8", "#E45756"
@@ -74,10 +75,21 @@ def main():
 
     out["degree"] = {name: {g: float(df[g].mean()) for g in GRAPH}
                      for name, df in [("licit", licit), ("illicit", illicit)]}
+    # Label homophily on training edges (undirected): what the neighbours of each class are.
+    edges = pd.read_parquet(PROCESSED / "edges.parquet")
+    label, split = nodes.set_index("txId")["label"], nodes.set_index("txId")["split"]
+    edges = edges[split[edges["src"]].to_numpy() == "train"]  # edges never cross time steps
+    a, b = label[edges["src"]].to_numpy(), label[edges["dst"]].to_numpy()
+    end, other = np.r_[a, b], np.r_[b, a]
+    out["homophily_train"] = {
+        name: {"illicit": float(np.mean(other[end == c] == 1)), "licit": float(np.mean(other[end == c] == 0)),
+               "unknown": float(np.mean(other[end == c] == -1)),
+               "illicit_among_labeled": float(np.mean(other[(end == c) & (other >= 0)] == 1))}
+        for name, c in [("illicit", 1), ("licit", 0)]}
     save_json(out, "eda.json")
 
     # Figure: (a) top-KS feature histogram, (b) CDF of max |z|, (c) PCA projection.
-    fig, axes = plt.subplots(1, 3, figsize=(7.0, 2.1))
+    fig, axes = plt.subplots(1, 3, figsize=(7.0, 1.85))
     ax = axes[0]
     f = top[0]
     lo, hi = np.percentile(lab[f], [1, 99])

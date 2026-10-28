@@ -22,12 +22,19 @@ Assignment spec: [`docs/DM-HW2.pdf`](docs/DM-HW2.pdf).
 | T1a | Random score | 0.065 ± 0.001 | 0.495 | 0.122 | 0.060 |
 | T1b | 3σ rule | 0.053 | 0.326 | 0.010 | 0.040 |
 | T2′ | One-class Isolation Forest | 0.038 ± 0.000 | 0.170 | 0.121 | 0.000 |
+| T2″ | LvU with GraphSAGE message passing | 0.189 ± 0.017 | 0.799 | 0.279 | 0.190 |
 | **T2** | **LvU classifier (ours, no illicit labels)** | **0.546 ± 0.024** | **0.865** | **0.398** | **0.822** |
 | T3a | Random Forest (supervised) | 0.767 ± 0.003 | 0.891 | 0.541 | 1.000 |
 | T3b | XGBoost (supervised) | 0.790 ± 0.001 | 0.922 | 0.675 | 1.000 |
+| T3c | GraphSAGE GNN (supervised) | 0.552 ± 0.035 | 0.874 | 0.568 | 0.842 |
 
-Every method collapses after the dark-market shutdown at time step 43. The ablations and the
-error analysis are in the report (§7–§8).
+- **LvU vs. supervised GraphSAGE:** label-free LvU is statistically indistinguishable from the
+  supervised GraphSAGE (p = 0.79).
+- **Message passing inside LvU fails:** 59% of the neighbours of illicit transactions are unknown,
+  so aggregating them erases the licit/unknown contrast.
+- **Dark-market shutdown:** every method collapses after it, at time step 43.
+
+The ablations and the error analysis are in the report (§7–§8).
 
 ## Reproduce
 
@@ -37,6 +44,7 @@ python scripts/download_data.py       # reassemble data/elliptic/ parts -> data/
 python scripts/prepare_data.py        # parquet + shared chronological split -> data/processed/
 python experiments/eda.py             # §4, training split only
 python experiments/run_main.py        # §7, 3-tier comparison (~4 min on 4 CPUs)
+python experiments/run_gnn.py         # §7, GNNs with PyTorch Geometric (~1.5 h on 4 CPUs; after run_main)
 python experiments/run_ablations.py   # §7.1 (~15 min)
 python experiments/analysis.py        # significance, per-step, error analysis, SHAP (~10 min)
 python paper/make_tables.py           # LaTeX tables from results/*.json
@@ -69,8 +77,9 @@ Only labeled transactions are evaluated.
 ```
 data/elliptic/  unmodified Elliptic archive (split into parts), checksums, license note
 scripts/        data reassembly/download, preprocessing, submission packing
-src/common.py   data loading, methods (all tiers), metrics, threshold rules
-experiments/    eda, run_main, run_ablations, analysis
+src/common.py   data loading, tree/rule methods (all tiers), metrics, threshold rules
+src/gnn.py      GCN/GraphSAGE detectors (PyTorch Geometric), supervised and LvU roles
+experiments/    eda, run_main, run_gnn, run_ablations, analysis
 results/        JSON outputs of every experiment (numbers used in the report)
 figures/        figures used in the report
 paper/          ACL-format report (LaTeX source, refs.bib, generated tables/, PDFs)

@@ -83,7 +83,7 @@ def per_step_figure(main):
              "T3a RandomForest (sup.)": ("T3a RF (sup.)", "#4C78A8", "--"),
              "T3b XGBoost (sup.)": ("T3b XGB (sup.)", "#72B7B2", "--"),
              "T2' IForest (one-class)": ("One-class IF", "#B279A2", ":")}
-    fig, ax = plt.subplots(figsize=(3.1, 2.1))
+    fig, ax = plt.subplots(figsize=(3.1, 1.85))
     steps = sorted(int(s) for s in main[OURS]["runs"][0]["per_step"])
     counts = [main[OURS]["runs"][0]["per_step"][str(s)]["n_illicit"] for s in steps]
     ax2 = ax.twinx()
@@ -163,21 +163,16 @@ def error_analysis(nodes, main, scores):
         "licit_zero_in_degree_share": float(np.mean(test.loc[y == 0, "in_degree"] == 0)),
     }
 
-    # Global importance on test illicit rows + one local explanation (figure).
+    # Global importance on test illicit rows (reported in the text) + one local explanation (figure).
     mean_abs = np.abs(phi[y == 1]).mean(axis=0)
     top = np.argsort(-mean_abs)[:8]
-    fig, axes = plt.subplots(1, 2, figsize=(6.3, 1.9))
-    ax = axes[0]
-    ax.barh([cols[j] for j in top][::-1], mean_abs[top][::-1], color="#E45756")
-    ax.set_xlabel("mean |SHAP| on test illicit (log-odds)")
-    ax.set_title("(a) global attribution")
-    ax = axes[1]
+    fig, ax = plt.subplots(figsize=(3.1, 1.6))
     i = tp[np.argmax(s[tp])]
-    loc = np.argsort(-np.abs(phi[i]))[:8]
+    loc = np.argsort(-np.abs(phi[i]))[:6]
     ax.barh([f"{cols[j]}={test.loc[i, cols[j]]:.2f}" for j in loc][::-1], phi[i, loc][::-1],
             color=["#E45756" if v > 0 else "#4C78A8" for v in phi[i, loc][::-1]])
     ax.set_xlabel("SHAP contribution (log-odds)")
-    ax.set_title(f"(b) flagged tx {int(test.loc[i, 'txId'])}, s={s[i]:.3f}")
+    ax.set_title(f"flagged tx {int(test.loc[i, 'txId'])}, s={s[i]:.3f}")
     fig.tight_layout()
     fig.savefig(FIGURES / "shap.pdf")
 
