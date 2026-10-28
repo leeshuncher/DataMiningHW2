@@ -1,7 +1,11 @@
-"""Download the Elliptic Bitcoin dataset (Weber et al., 2019) into data/raw/.
+"""Fetch the Elliptic Bitcoin dataset (Weber et al., 2019) into data/raw/.
 
-Primary source is the official Kaggle release by Elliptic; the PyTorch Geometric
-mirror is used as a fallback. Both serve the same three CSV files.
+Sources, in order:
+1. the unmodified Kaggle archive shipped in this repository (data/elliptic/, split
+   into parts to stay under GitHub's file-size limit),
+2. the official Kaggle release by Elliptic,
+3. the PyTorch Geometric mirror of the same three CSV files.
+The archive is verified against its SHA-256 before extraction.
 
 Usage:
     python scripts/download_data.py
@@ -17,6 +21,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw"
 OUT_DIR = RAW_DIR / "elliptic_bitcoin_dataset"
+PARTS_DIR = ROOT / "data" / "elliptic"
 
 KAGGLE_URL = "https://www.kaggle.com/api/v1/datasets/download/ellipticco/elliptic-data-set"
 KAGGLE_SHA256 = "70ed052c52002392720615a03261039b62d1ad594f6081ad021cb174a8ad5717"
@@ -45,6 +50,12 @@ def sha256(path):
 
 def from_kaggle():
     archive = RAW_DIR / "elliptic.zip"
+    parts = sorted(PARTS_DIR.glob("elliptic.zip.part-*"))
+    if not archive.exists() and parts:
+        print(f"Reassembling {len(parts)} parts from {PARTS_DIR}")
+        with open(archive, "wb") as out:
+            for part in parts:
+                out.write(part.read_bytes())
     if not archive.exists():
         fetch(KAGGLE_URL, archive)
     digest = sha256(archive)

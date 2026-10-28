@@ -1,4 +1,4 @@
-# Data: downloaded by scripts/download_data.py (CC BY-NC-ND 4.0, not redistributed here)
+# Data extracted/derived locally by scripts/ (the unmodified archive is in data/elliptic/)
 data/raw/
 data/processed/*.parquet
 
@@ -11,6 +11,9 @@ paper/*.bbl
 paper/*.blg
 paper/*.log
 paper/*.out
+
+# E3 upload, built by scripts/make_submission.sh
+HW2_G13.zip
 
 __pycache__/
 *.pyc
