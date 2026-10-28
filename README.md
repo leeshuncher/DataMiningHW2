@@ -81,7 +81,7 @@ src/common.py   data loading, tree/rule methods (all tiers), metrics, threshold 
 src/gnn.py      GCN/GraphSAGE detectors (PyTorch Geometric), supervised and LvU roles
 experiments/    eda, run_main, run_gnn, run_ablations, analysis
 results/        JSON outputs of every experiment (numbers used in the report)
-figures/        figures used in the report
+figures/        EDA figure used in the report; per-step F1 and SHAP plots from analysis.py
 paper/          ACL-format report (LaTeX source, refs.bib, generated tables/, PDFs)
 docs/           assignment specification
 ```

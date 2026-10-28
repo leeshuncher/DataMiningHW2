@@ -26,6 +26,9 @@ def load(name):
 
 
 def pm(m, digits=3):
+    """mean +- seed std; deterministic results show a bootstrap std marked with a dagger."""
+    if "boot_std" in m:
+        return f"{m['mean']:.{digits}f}" + rf"$\pm${m['boot_std']:.{digits}f}$^\dagger$"
     return f"{m['mean']:.{digits}f}" + (rf"$\pm${m['std']:.{digits}f}" if m["std"] > 0 else "")
 
 
@@ -57,6 +60,9 @@ CONV_NAME = {"gcn": "GCN", "sage": "GraphSAGE"}
 def main_table():
     main, ana, gnn = load("main.json"), load("analysis.json"), load("gnn.json")
     pre = ana["pr_auc_shutdown"]
+    for name, res in main.items():
+        if len(res["runs"]) == 1:  # deterministic: report the test-bootstrap std
+            res["summary"]["pr_auc"]["boot_std"] = ana["bootstrap_std"][name]
     # (tier, label, summary, PR-AUC before / from the shutdown), in table order; None = rule.
     entries = []
     for name, (tier, label) in DISPLAY.items():
@@ -126,32 +132,36 @@ def ablation_table():
             m = ab[key][k]
             d = m["pr_auc"]["mean"] - ref
             delta = "---" if "(ours)" in label else f"${d:+.3f}$"
-            rows.append(f"\\quad {label} & {pm(m['pr_auc'])} & {delta} & {m['f1']['mean']:.3f} \\\\")
+            rows.append(f"\\quad {label} & {pm(m['pr_auc'])} & {delta} & {m['val_pr_auc']['mean']:.3f} \\\\")
     write("ablation.tex", "\n".join([
         r"\begin{tabular}{@{}lccc@{}}", r"\toprule",
-        r"Setting & PR-AUC & $\Delta$ & F1@$\tau$ \\", r"\midrule",
+        r"Setting & Test PR-AUC & $\Delta$ & Val \\", r"\midrule",
         *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
-CAUSES = {
-    "FN (inversion)": "licit-typical profile",
-    "FN (near miss)": "73/93 features equal \\#4",
-    "FP (confident)": "licit tx in illicit mode",
-    "FP (near miss)": "73/93 features equal \\#2",
-}
+CASES = ["FN (inversion)", "FN (near miss)", "FP (confident)", "FP (near miss)"]
+
+
+def signed(v):
+    """Signed margin; tiny values in scientific notation so that the sign stays visible."""
+    if abs(v) >= 1e-3:
+        return f"${v:+.3f}$"
+    mant, exp = f"{v:+.1e}".split("e")
+    return rf"${mant}{{\times}}10^{{{int(exp)}}}$"
 
 
 def cases_table():
     ea = load("analysis.json")["error_analysis"]
     rows = []
-    for i, c in enumerate([c for c in ea["cases"] if c["type"] in CAUSES], 1):
+    for i, c in enumerate([c for c in ea["cases"] if c["type"] in CASES], 1):
         f = c["top_features"][0]
-        rows.append(f"{i} & {c['type'].split()[0]} & {c['txId']} & {c['time_step']} & {c['score']:.3f} & "
-                    f"{f['feature'].replace('_', chr(92) + '_')}$={f['value']:.2f}$ & {c['rf_score']:.2f} & "
-                    f"{CAUSES[c['type']]} \\\\")
+        rows.append(f"{i} & {c['type'].split()[0]} & {c['txId']} & {c['time_step']} & {c['score']:.5f} & "
+                    f"{signed(c['margin'])} & {f['feature'].replace('local_', 'L')}$={f['value']:.2f}$ "
+                    f"(${f['shap']:+.2f}$) & {c['rf_score']:.2f} \\\\")
     write("cases.tex", "\n".join([
-        r"\begin{tabular}{@{}clrrcccl@{}}", r"\toprule",
-        r"\# & Type & txId & Step & $s(x)$ & Top-SHAP feature & RF & Likely cause \\", r"\midrule",
+        r"\begin{tabular}{@{}clrrcrcr@{}}", r"\toprule",
+        r"\# & Type & txId & Step & $s(x)$ & $s-\tau$ & Top SHAP & RF \\",
+        r"\midrule",
         *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
