@@ -17,7 +17,7 @@ from scipy.stats import ks_2samp
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import mutual_info_classif
 
-from common import AGG, FIGURES, GRAPH, LOCAL, load_nodes, save_json
+from common import AGG, FIGURES, GRAPH, HOP2, LOCAL, load_nodes, save_json
 
 plt.rcParams.update({"font.size": 8, "figure.dpi": 150})
 LICIT_C, ILLICIT_C = "#4C78A8", "#E45756"
@@ -29,7 +29,7 @@ def main():
     train = nodes[nodes["split"] == "train"]
     lab = train[train["label"] >= 0]
     licit, illicit = lab[lab["label"] == 0], lab[lab["label"] == 1]
-    feats = LOCAL + AGG + GRAPH
+    feats = LOCAL + AGG + GRAPH + HOP2
     out = {}
 
     # Per-step label composition (train steps only).
@@ -43,14 +43,10 @@ def main():
     out["top10_ks"] = [{"feature": f, "ks": round(ks[f], 3), "mi": round(mi[f], 3),
                         "median_licit": round(float(licit[f].median()), 3),
                         "median_illicit": round(float(illicit[f].median()), 3)} for f in top]
-    out["mean_ks"] = {"local": float(np.mean([ks[f] for f in LOCAL])),
-                      "agg": float(np.mean([ks[f] for f in AGG])),
-                      "degree": float(np.mean([ks[f] for f in GRAPH]))}
-    out["mean_mi"] = {"local": float(np.mean([mi[f] for f in LOCAL])),
-                      "agg": float(np.mean([mi[f] for f in AGG])),
-                      "degree": float(np.mean([mi[f] for f in GRAPH]))}
-    out["n_features_ks_gt_0.3"] = {"local": sum(ks[f] > 0.3 for f in LOCAL),
-                                   "agg": sum(ks[f] > 0.3 for f in AGG)}
+    groups = {"local": LOCAL, "agg": AGG, "degree": GRAPH, "hop2": HOP2}
+    out["mean_ks"] = {g: float(np.mean([ks[f] for f in cols])) for g, cols in groups.items()}
+    out["mean_mi"] = {g: float(np.mean([mi[f] for f in cols])) for g, cols in groups.items()}
+    out["n_features_ks_gt_0.3"] = {g: int(sum(ks[f] > 0.3 for f in cols)) for g, cols in groups.items()}
 
     # Redundancy among features.
     corr = np.corrcoef(lab[LOCAL + AGG].to_numpy().T)
@@ -113,8 +109,8 @@ def main():
     ax.scatter(pi[:, 0], pi[:, 1], s=2, alpha=0.4, color=ILLICIT_C, label="illicit")
     ax.set_xlim(*np.percentile(np.r_[pl[:, 0], pi[:, 0]], [0.5, 99.5]))
     ax.set_ylim(*np.percentile(np.r_[pl[:, 1], pi[:, 1]], [0.5, 99.5]))
-    ax.set_xlabel("PC1 (fit on licit)")
-    ax.set_ylabel("PC2")
+    ax.set_xlabel("PC1 (std. units, fit on licit)")
+    ax.set_ylabel("PC2 (std. units)")
     ax.set_title("(c) PCA projection")
     fig.tight_layout()
     fig.savefig(FIGURES / "eda.pdf")

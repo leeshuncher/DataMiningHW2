@@ -99,7 +99,7 @@ def per_step_figure(main):
                      "f1_from_shutdown": float(f1[:, [s >= SHUTDOWN_STEP for s in steps]].mean())}
     ax.axvline(SHUTDOWN_STEP - 0.5, color="black", lw=0.8)
     ax.text(SHUTDOWN_STEP - 0.3, 0.95, "dark-market\nshutdown", fontsize=6, va="top")
-    ax.set_xlabel("test time step")
+    ax.set_xlabel("test time step (1 step ≈ 2 weeks)")
     ax.set_ylabel("illicit F1 (mean of seeds)")
     ax.set_ylim(0, 1)
     ax.legend(frameon=False, fontsize=6, loc="center right", bbox_to_anchor=(1.0, 0.55))

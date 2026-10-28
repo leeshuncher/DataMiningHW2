@@ -1,10 +1,10 @@
-"""Controlled ablations of the Tier 2 detector (§7.2). One factor varies at a time;
+"""Controlled ablations of the Tier 2 detector (§7.1). One factor varies at a time;
 everything else stays at the configuration selected in run_main.py.
 
 A1 contamination   share of illicit rows hidden in the licit side: 0/1/5/10 %
 A2 unlabeled pool  fraction of the unlabeled train pool used: 5/25/50/100 %
 A3 scoring family  label-free detectors on the same features
-A4 feature set     LF / AF / AF+deg
+A4 feature set     LF / AF / AF+deg / AF+2hop
 A5 threshold rule  best-F1 on val / 95th pct of licit-train scores / weekly review budget
 
 Output: results/ablations.json
@@ -125,7 +125,7 @@ def main():
     print("A3", {k: v["pr_auc"]["mean"] for k, v in out["A3_scoring"].items()})
 
     out["A4_features"] = {}
-    for fs in ["LF", "AF", "AF+deg"]:
+    for fs in ["LF", "AF", "AF+deg", "AF+2hop"]:
         out["A4_features"][fs] = run(nodes, FEATURE_SETS[fs],
                                      lambda s, c=FEATURE_SETS[fs]: pu(s, cols=c), SEEDS)
         print("A4", fs, out["A4_features"][fs]["pr_auc"])

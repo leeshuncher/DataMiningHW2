@@ -41,21 +41,21 @@
     {
       "feature": "local_55",
       "ks": 0.6480000019073486,
-      "mi": 0.205,
+      "mi": 0.204,
       "median_licit": 0.591,
       "median_illicit": -0.467
     },
     {
       "feature": "local_41",
       "ks": 0.6439999938011169,
-      "mi": 0.15,
+      "mi": 0.149,
       "median_licit": -0.236,
       "median_illicit": -0.239
     },
     {
       "feature": "local_47",
       "ks": 0.6430000066757202,
-      "mi": 0.152,
+      "mi": 0.151,
       "median_licit": -0.24,
       "median_illicit": -0.243
     },
@@ -69,28 +69,28 @@
     {
       "feature": "local_49",
       "ks": 0.6259999871253967,
-      "mi": 0.15,
+      "mi": 0.148,
       "median_licit": -0.234,
       "median_illicit": -0.236
     },
     {
       "feature": "local_29",
       "ks": 0.5920000076293945,
-      "mi": 0.143,
+      "mi": 0.14,
       "median_licit": -0.149,
       "median_illicit": -0.149
     },
     {
       "feature": "local_23",
       "ks": 0.5920000076293945,
-      "mi": 0.141,
+      "mi": 0.143,
       "median_licit": -0.149,
       "median_illicit": -0.149
     },
     {
       "feature": "local_90",
       "ks": 0.5879999995231628,
-      "mi": 0.113,
+      "mi": 0.11,
       "median_licit": 0.161,
       "median_illicit": -0.694
     },
@@ -105,16 +105,20 @@
   "mean_ks": {
     "local": 0.37520697712898254,
     "agg": 0.2729426622390747,
-    "degree": 0.19599828124046326
+    "degree": 0.19599828124046326,
+    "hop2": 0.18442893028259277
   },
   "mean_mi": {
-    "local": 0.08805179250767564,
-    "agg": 0.06009358878785671,
-    "degree": 0.017013034149681694
+    "local": 0.0881863488484517,
+    "agg": 0.0601503006008039,
+    "degree": 0.01813463270716209,
+    "hop2": 0.05573663348835933
   },
   "n_features_ks_gt_0.3": {
-    "local": 63.0,
-    "agg": 30.0
+    "local": 63,
+    "agg": 30,
+    "degree": 0,
+    "hop2": 9
   },
   "pairs_abs_corr_gt_0.95": 89,
   "share_maxz_gt_3": {

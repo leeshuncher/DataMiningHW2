@@ -1,4 +1,4 @@
-"""Main 3-tier comparison (§7.1) on the shared chronological split.
+"""Main 3-tier comparison (§7) on the shared chronological split.
 
 1. Model selection for Tier 2 on the validation split (seed 0).
 2. Every method x 5 seeds: fit on train, pick tau = best F1 on val, evaluate once on test.
