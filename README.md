@@ -1,8 +1,8 @@
 # Money Laundering Is Not an Outlier
 
-Data Mining HW2 (Anomaly Detection). We detect illicit Bitcoin transactions in the
-[Elliptic Data Set](https://www.kaggle.com/datasets/ellipticco/elliptic-data-set) (Weber et al., 2019)
-**without using any illicit label for fitting**.
+Data Mining HW2 (Anomaly Detection), Team G13. We detect illicit Bitcoin transactions in the
+Elliptic Data Set (Weber et al., 2019) **without using any illicit label for fitting**.
+Data category: **Graph**.
 
 - **Finding:** illicit transactions are *not* outliers. Only 1.7% of them exceed a 3σ rule,
   against 22.3% of licit ones. One-class detectors trained on licit data therefore rank illicit
@@ -11,7 +11,9 @@ Data Mining HW2 (Anomaly Detection). We detect illicit Bitcoin transactions in t
   licit transactions from unlabeled ones, and its output P(unlabeled | x) is the anomaly score.
   Illicit labels are used only to set the threshold on the validation steps.
 
-Paper: [`paper/main.pdf`](paper/main.pdf) (anonymised draft: [`paper/main_review.pdf`](paper/main_review.pdf)). Assignment spec: [`docs/DM-HW2.pdf`](docs/DM-HW2.pdf).
+Report: [`paper/HW2_G13_report.pdf`](paper/HW2_G13_report.pdf). Anonymised draft for the LLM TA
+Judge: [`paper/HW2_G13_report_review.pdf`](paper/HW2_G13_report_review.pdf).
+Assignment spec: [`docs/DM-HW2.pdf`](docs/DM-HW2.pdf).
 
 ## Results (test steps 35–49, mean ± std over 5 seeds)
 
@@ -24,24 +26,33 @@ Paper: [`paper/main.pdf`](paper/main.pdf) (anonymised draft: [`paper/main_review
 | T3a | Random Forest (supervised) | 0.767 ± 0.003 | 0.891 | 0.541 | 1.000 |
 | T3b | XGBoost (supervised) | 0.790 ± 0.001 | 0.922 | 0.675 | 1.000 |
 
-Every method collapses after the dark-market shutdown at time step 43. The ablations and the error
-analysis are in the paper (§7–§8).
+Every method collapses after the dark-market shutdown at time step 43. The ablations and the
+error analysis are in the report (§7–§8).
 
 ## Reproduce
 
 ```bash
 pip install -r requirements.txt
-python scripts/download_data.py       # Elliptic CSVs -> data/raw/ (checksum verified)
+python scripts/download_data.py       # reassemble data/elliptic/ parts -> data/raw/ (SHA-256 checked)
 python scripts/prepare_data.py        # parquet + shared chronological split -> data/processed/
 python experiments/eda.py             # §4, training split only
-python experiments/run_main.py        # §7.1, 3-tier comparison (~4 min on 4 CPUs)
-python experiments/run_ablations.py   # §7.2 (~15 min)
+python experiments/run_main.py        # §7, 3-tier comparison (~4 min on 4 CPUs)
+python experiments/run_ablations.py   # §7.1 (~15 min)
 python experiments/analysis.py        # significance, per-step, error analysis, SHAP (~10 min)
 python paper/make_tables.py           # LaTeX tables from results/*.json
-cd paper && pdflatex main && bibtex main && pdflatex main && pdflatex main
+cd paper && for f in HW2_G13_report HW2_G13_report_review; do
+  pdflatex $f && bibtex $f && pdflatex $f && pdflatex $f; done
 ```
 
-`paper/main_review.tex` builds the anonymised draft for the LLM TA Judge from the same source: review mode, Team ID as the only author, members shown as Member A–H, no repository link. Build it the same way, with `main_review` in place of `main`.
+`HW2_G13_report_review.tex` builds the anonymised draft from the same source:
+
+- ACL review mode
+- Team ID as the only author
+- members shown as Member A–H
+- no repository link
+
+`scripts/make_submission.sh` packs the E3 upload `HW2_G13.zip` from
+`paper/HW2_G13_report.pdf` and `slides/HW2_G13_presentation.pptx` (or `.pdf`).
 
 The split is chronological by time step and is shared by every method:
 
@@ -56,18 +67,20 @@ Only labeled transactions are evaluated.
 ## Layout
 
 ```
-scripts/       download + preprocessing
-src/common.py  data loading, methods (all tiers), metrics, threshold rules
-experiments/   eda, run_main, run_ablations, analysis
-results/       JSON outputs of every experiment (numbers used in the paper)
-figures/       figures used in the paper
-paper/         ACL-format report (main.tex, refs.bib, generated tables/)
-docs/          assignment specification
+data/elliptic/  unmodified Elliptic archive (split into parts), checksums, license note
+scripts/        data reassembly/download, preprocessing, submission packing
+src/common.py   data loading, methods (all tiers), metrics, threshold rules
+experiments/    eda, run_main, run_ablations, analysis
+results/        JSON outputs of every experiment (numbers used in the report)
+figures/        figures used in the report
+paper/          ACL-format report (LaTeX source, refs.bib, generated tables/, PDFs)
+docs/           assignment specification
 ```
 
 ## Data and license
 
-The Elliptic Data Set is released by Elliptic under
-[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). It is not redistributed in
-this repository; `scripts/download_data.py` fetches the official Kaggle release (SHA-256 checked)
-and falls back to the PyTorch Geometric mirror.
+The Elliptic Data Set is © Elliptic and released under
+[CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/). `data/elliptic/` holds
+the official Kaggle archive, unmodified and redistributed for non-commercial coursework; see
+[`data/elliptic/README.md`](data/elliptic/README.md). Source:
+<https://www.kaggle.com/datasets/ellipticco/elliptic-data-set>.

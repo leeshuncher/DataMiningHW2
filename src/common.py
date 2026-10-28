@@ -11,6 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import scipy.sparse as sp
 from sklearn.covariance import LedoitWolf
 from sklearn.ensemble import IsolationForest, RandomForestClassifier
 from sklearn.metrics import average_precision_score, f1_score, precision_recall_curve, roc_auc_score
@@ -25,22 +26,33 @@ SEEDS = [0, 1, 2, 3, 4]
 LOCAL = [f"local_{i}" for i in range(1, 94)]
 AGG = [f"agg_{i}" for i in range(1, 73)]
 GRAPH = ["in_degree", "out_degree"]
-FEATURE_SETS = {"LF": LOCAL, "AF": LOCAL + AGG, "AF+deg": LOCAL + AGG + GRAPH}
+HOP2 = [f"hop2_{i}" for i in range(1, 73)]  # neighbours' one-hop aggregates, i.e. two hops
+FEATURE_SETS = {"LF": LOCAL, "AF": LOCAL + AGG, "AF+deg": LOCAL + AGG + GRAPH, "AF+2hop": LOCAL + AGG + HOP2}
 
-# Review budget used for Precision@k: analysts audit k alerts over the 15-week test period.
+# Review budget used for Precision@k: analysts audit k alerts over the 15-step (~30-week) test period.
 REVIEW_BUDGET = 100
 
 
 # --------------------------------------------------------------------------- data
 
 def load_nodes():
-    """Nodes with features, label, split and graph-degree features."""
+    """Nodes with features, label, split, graph degree and two-hop aggregates."""
     nodes = pd.read_parquet(PROCESSED / "nodes.parquet")
     edges = pd.read_parquet(PROCESSED / "edges.parquet")
     out_deg = edges["src"].value_counts()
     in_deg = edges["dst"].value_counts()
     nodes["out_degree"] = nodes["txId"].map(out_deg).fillna(0).astype("float32")
     nodes["in_degree"] = nodes["txId"].map(in_deg).fillna(0).astype("float32")
+
+    # Two-hop context: mean of the neighbours' one-hop aggregates (undirected; 0 if isolated).
+    # Edges never cross time steps, so this uses no information from other periods.
+    index = pd.Series(np.arange(len(nodes)), index=nodes["txId"])
+    src, dst = index[edges["src"]].to_numpy(), index[edges["dst"]].to_numpy()
+    adj = sp.coo_matrix((np.ones(2 * len(src)), (np.r_[src, dst], np.r_[dst, src])),
+                        shape=(len(nodes), len(nodes))).tocsr()
+    deg = np.asarray(adj.sum(axis=1)).ravel()
+    hop2 = sp.diags(1 / np.maximum(deg, 1)) @ adj @ nodes[AGG].to_numpy(dtype="float64")
+    nodes = pd.concat([nodes, pd.DataFrame(hop2.astype("float32"), columns=HOP2, index=nodes.index)], axis=1)
     return nodes
 
 
