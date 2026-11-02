@@ -17,8 +17,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from scipy.stats import ttest_rel
+from scipy.stats import ttest_ind_from_stats, ttest_rel
 from sklearn.metrics import average_precision_score
+from sklearn.neighbors import NearestNeighbors
+from sklearn.preprocessing import StandardScaler
 
 from common import (FEATURE_SETS, FIGURES, RESULTS, SEEDS, LicitVsUnlabeled, labeled, load_nodes,
                     one_class_train, pu_train, save_json)
@@ -163,6 +165,33 @@ def error_analysis(nodes, main, scores):
         "licit_zero_in_degree_share": float(np.mean(test.loc[y == 0, "in_degree"] == 0)),
     }
 
+    # Is LvU's score "unlabeled-likeness"? Share of unknown rows among each test transaction's
+    # 10 nearest training neighbours (licit + unknown pool, standardized LF).
+    pool = np.vstack([licit[cols].to_numpy(), unlabeled[cols].to_numpy()])
+    is_unknown = np.r_[np.zeros(len(licit)), np.ones(len(unlabeled))]
+    scaler = StandardScaler().fit(pool)
+    _, nn_idx = NearestNeighbors(n_neighbors=10).fit(scaler.transform(pool)).kneighbors(
+        scaler.transform(test[cols].to_numpy()))
+    unknown_share = is_unknown[nn_idx].mean(axis=1)
+    groups = {"FP": fp, "TN": np.where((y == 0) & (s < tau))[0], "TP": tp, "FN": fn}
+    fn_profile["unknown_share_10nn"] = {k: float(unknown_share[v].mean()) for k, v in groups.items()}
+    fn_profile["unknown_share_pool"] = float(is_unknown.mean())
+
+    # Post-shutdown misses: do the new illicit transactions still sit on the illicit mode?
+    mode_value = -0.4883  # value of local_53 shared by most illicit training transactions (EDA)
+    on_mode = np.isclose(test["local_53"].to_numpy(), mode_value, atol=1e-3)
+    train_illicit = labeled(nodes, "train").query("label == 1")
+    j53 = cols.index("local_53")
+    post_fn = fn[steps[fn] >= SHUTDOWN_STEP]
+    pre_tp = tp[steps[tp] < SHUTDOWN_STEP]
+    fn_profile["illicit_on_mode_share"] = {
+        "train": float(np.isclose(train_illicit["local_53"], mode_value, atol=1e-3).mean()),
+        "test_before": float(on_mode[(y == 1) & (steps < SHUTDOWN_STEP)].mean()),
+        "test_from": float(on_mode[(y == 1) & (steps >= SHUTDOWN_STEP)].mean())}
+    fn_profile["shap_local_53"] = {"post_shutdown_fn": float(phi[post_fn, j53].mean()),
+                                   "pre_shutdown_tp": float(phi[pre_tp, j53].mean()),
+                                   "n_post_shutdown_fn": int(len(post_fn))}
+
     # Global importance on test illicit rows (reported in the text) + one local explanation (figure).
     mean_abs = np.abs(phi[y == 1]).mean(axis=0)
     top = np.argsort(-mean_abs)[:8]
@@ -229,6 +258,23 @@ def budget_comparison(scores, budget=30):
     return out
 
 
+def ablation_welch():
+    """Welch t-test (over 5 seeds) of each A2/A4 setting against the full method."""
+    ab = json.loads((RESULTS / "ablations.json").read_text())
+    base = ab["A1_contamination"]["0%"]["pr_auc"]
+    n = len(SEEDS)
+    sample_sd = lambda m: m["std"] * np.sqrt(n / (n - 1))  # stored std is the population std
+    out = {}
+    for group in ["A2_unlabeled_pool", "A4_features"]:
+        for name, res in ab[group].items():
+            m = res["pr_auc"]
+            if m == base:
+                continue
+            t = ttest_ind_from_stats(m["mean"], sample_sd(m), n, base["mean"], sample_sd(base), n, equal_var=False)
+            out[f"{group}/{name}"] = {"delta": m["mean"] - base["mean"], "p": float(t.pvalue)}
+    return out
+
+
 def main():
     FIGURES.mkdir(exist_ok=True)
     main_res = json.loads((RESULTS / "main.json").read_text())
@@ -242,6 +288,7 @@ def main():
         "impact": practical_impact(main_res, scores),
         "impact_budget30": budget_comparison(scores),
         "bootstrap_std": bootstrap_std(scores),
+        "ablation_welch": ablation_welch(),
     }
     save_json(out, "analysis.json")
     print(json.dumps(out["error_analysis"]["profile"], indent=1))

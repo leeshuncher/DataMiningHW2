@@ -1,6 +1,7 @@
 {
   "n_features": 166,
   "n_edges": 234355,
+  "edges_crossing_time_steps": 0,
   "time_steps": [
     1,
     49
