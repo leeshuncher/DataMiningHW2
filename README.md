@@ -9,7 +9,7 @@ Data category: **Graph**.
   transactions *below* normal ones (test ROC-AUC 0.17).
 - **Method (Tier 2, LvU):** a positive-unlabeled detector. An XGBoost classifier separates labeled
   licit transactions from unlabeled ones, and its output P(unlabeled | x) is the anomaly score.
-  Illicit labels are used only to set the threshold on the validation steps.
+  Illicit labels are used only on the validation steps, to select hyperparameters and set the threshold.
 
 Report: [`paper/HW2_G13_report.pdf`](paper/HW2_G13_report.pdf). Anonymised draft for the LLM TA
 Judge: [`paper/HW2_G13_report_review.pdf`](paper/HW2_G13_report_review.pdf).

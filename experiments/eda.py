@@ -73,6 +73,10 @@ def main():
     out["illicit_drift_ks_early_vs_late"] = {"mean": float(np.mean(drift_ill)),
                                              "n_gt_0.2": int(np.sum(np.array(drift_ill) > 0.2))}
 
+    # The illicit mode of the top feature: local_53 within +-0.001 of -0.4883.
+    on_mode = lambda df: float((abs(df["local_53"] + 0.4883) < 1e-3).mean())
+    out["local_53_mode_share"] = {"tolerance": 1e-3, "illicit": on_mode(illicit), "licit": on_mode(licit)}
+
     out["degree"] = {name: {g: float(df[g].mean()) for g in GRAPH}
                      for name, df in [("licit", licit), ("illicit", illicit)]}
     # Label homophily on training edges (undirected): what the neighbours of each class are.

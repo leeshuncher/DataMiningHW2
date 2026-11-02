@@ -288,6 +288,16 @@
         "test_before": 0.8391684901531729,
         "test_from": 0.01775147928994083
       },
+      "case1_local_53_percentile": {
+        "illicit": 0.9965168930686172,
+        "licit": 0.6265418970650787
+      },
+      "case2_vs_case4": {
+        "equal_features_atol_1e-4": 73,
+        "n_features": 93,
+        "l2": 4.056467533111572,
+        "median_l2_case2_to_licit_train": 10.179926872253418
+      },
       "shap_local_53": {
         "post_shutdown_fn": -0.3285287618637085,
         "pre_shutdown_tp": 1.0336710214614868,

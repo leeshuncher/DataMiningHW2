@@ -188,6 +188,20 @@ def error_analysis(nodes, main, scores):
         "train": float(np.isclose(train_illicit["local_53"], mode_value, atol=1e-3).mean()),
         "test_before": float(on_mode[(y == 1) & (steps < SHUTDOWN_STEP)].mean()),
         "test_from": float(on_mode[(y == 1) & (steps >= SHUTDOWN_STEP)].mean())}
+    # Case #1: where its local_53 sits among illicit / licit training transactions.
+    inv = cases[0]
+    v53 = test.loc[test["txId"] == inv["txId"], "local_53"].iloc[0]
+    train_licit = one_class_train(nodes)
+    fn_profile["case1_local_53_percentile"] = {
+        "illicit": float((train_illicit["local_53"] < v53).mean()),
+        "licit": float((train_licit["local_53"] < v53).mean())}
+    # Cases #2 (FN near miss) and #4 (FP near miss): how similar are they?
+    a2 = test.loc[test["txId"] == cases[1]["txId"], cols].to_numpy()[0]
+    a4 = test.loc[test["txId"] == cases[3]["txId"], cols].to_numpy()[0]
+    fn_profile["case2_vs_case4"] = {
+        "equal_features_atol_1e-4": int(np.isclose(a2, a4, atol=1e-4).sum()), "n_features": len(cols),
+        "l2": float(np.linalg.norm(a2 - a4)),
+        "median_l2_case2_to_licit_train": float(np.median(np.linalg.norm(train_licit[cols].to_numpy() - a2, axis=1)))}
     fn_profile["shap_local_53"] = {"post_shutdown_fn": float(phi[post_fn, j53].mean()),
                                    "pre_shutdown_tp": float(phi[pre_tp, j53].mean()),
                                    "n_post_shutdown_fn": int(len(post_fn))}
