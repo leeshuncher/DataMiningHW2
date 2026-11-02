@@ -62,13 +62,12 @@ A missed laundering transaction (FN) exposes the provider to regulatory penaltie
 Licit labels come from the provider's own KYC-verified customers and from counterparties attributed to regulated exchanges; analyst capacity fixes the alert budget per period.
 
 \paragraph{Motivation.}
-Supervised detectors work well on Bitcoin data \citep{weber2019aml} but need confirmed illicit labels, which arrive late, whereas \emph{normal} labels are cheap (known exchanges are tagged automatically).
-One-class models, which treat anomalies as rare points far from normal data \citep{chandola2009survey}, are the natural label-free choice, yet \citet{lorenz2020label} found that they perform poorly and that illicit instances are not outlying.
-We quantify this failure, explain it, and turn the explanation into a detector.
+Supervised detectors work well on Bitcoin data \citep{weber2019aml} but need confirmed illicit labels, which arrive late.
+One-class models, treating anomalies as rare far-away points \citep{chandola2009survey}, are the label-free default, yet \citet{lorenz2020label} found them poor and illicit instances not outlying; we quantify, explain and exploit this.
 
 \paragraph{Definition of anomaly.}
 Our data belong to the \textbf{Graph} category: the unit of detection is one Bitcoin transaction, a node in a payment graph.
-A transaction is anomalous if the Elliptic labels attribute it to an illicit entity (scams, malware, ransomware, Ponzi schemes, terrorist organisations); it is normal if attributed to a licit entity (exchanges, wallet providers, miners).
+It is anomalous if Elliptic attributes it to an illicit entity (scams, malware, ransomware, Ponzi schemes) and normal if to a licit one (exchanges, wallet providers, miners).
 Example normal sample: tx 378120377 (step 16, licit; \texttt{local\_53}$=0.92$, \texttt{local\_55}$=0.45$, in/out degree 0/2).
 Example anomaly: tx 232014511 (step 1, illicit; \texttt{local\_53}$=-0.49$, \texttt{local\_55}$=-0.47$, degree 1/1).
 
@@ -88,7 +87,7 @@ Example anomaly: tx 232014511 (step 1, illicit; \texttt{local\_53}$=-0.49$, \tex
 Our data are in the \textbf{Graph} category (transactions are nodes, payment flows directed edges); its key challenge is multi-hop structure, as laundering routes funds through chains of transactions.
 \citet{weber2019aml} released Elliptic and compared supervised models on a 70:30 temporal split (Table~\ref{tab:related}); Random Forest on all features beat graph convolutional networks.
 EvolveGCN \citep{pareja2020evolvegcn} models the graph sequence over time (illicit F1 0.720 in \citealp{weber2019aml}) and reports that no model recovers after the dark-market shutdown.
-\citet{lorenz2020label} found that seven unsupervised detectors reach illicit F1 of at most 0.19 (LOF), and proposed active learning, which matches a supervised baseline with 5\% of the labels.
+\citet{lorenz2020label} found seven unsupervised detectors at illicit F1 ${\le}$0.19 and matched supervision with active learning on 5\% of the labels.
 Positive-unlabeled (PU) learning trains a classifier from one labeled class plus unlabeled data \citep{elkan2008pu,bekker2020pu}; we do not use Deep SAD \citep{ruff2020deepsad}, which trains on labeled anomalies that a provider without confirmed cases lacks.
 
 \begin{table}[t]
@@ -113,10 +112,10 @@ Ours & Elliptic & sup. & RF, AF & 0.541 \\
 \end{table}
 
 \paragraph{Positioning and method selection.}
-Tier~1 assumes anomalies are extreme in some feature (3$\sigma$ rule) or nothing at all (random score).
-Tier~2 assumes illicit mass is over-represented in unlabeled relative to licit data (our \ours{}); we also report the one-class Isolation Forest \citep{liu2008iforest}, which assumes anomalies are easy to isolate.
-Tier~3 uses full supervision: Random Forest \citep{breiman2001rf} as in \citet{weber2019aml}, XGBoost \citep{chen2016xgboost}, and a graph neural network.
-Graph context enters in two ways: as one-/two-hop aggregates and degree (A4), and through message passing with GCN \citep{kipf2017gcn} or GraphSAGE \citep{hamilton2017graphsage} layers, used both as a supervised reference (T3c) and as the classifier inside \ours{} (T2$''$).
+Tier~1 assumes anomalies are extreme in some feature (3$\sigma$) or nothing (random score).
+Tier~2 assumes illicit mass is over-represented in unlabeled relative to licit data (\ours{}); the one-class Isolation Forest \citep{liu2008iforest} instead assumes anomalies are easy to isolate.
+Tier~3 is fully supervised: Random Forest \citep{breiman2001rf} as in \citet{weber2019aml}, XGBoost \citep{chen2016xgboost}, and a GNN.
+Graph context enters as one-/two-hop aggregates and degree (A4) and through GCN \citep{kipf2017gcn} or GraphSAGE \citep{hamilton2017graphsage} message passing, both supervised (T3c) and inside \ours{} (T2$''$).
 Unlike prior work, we fit without illicit labels, explain \emph{why} outlier detectors invert, and analyse failures per transaction.
 
 % ---------------------------------------------------------------------------
@@ -125,14 +124,11 @@ Unlike prior work, we fit without illicit labels, explain \emph{why} outlier det
 
 \paragraph{Data set.}
 We use the Elliptic Data Set \citep{weber2019aml,elliptic2019data} (CC BY-NC-ND 4.0; an unmodified copy is in our repository).
-It contains $N=203{,}769$ transactions and 234,355 edges in 49 time steps about two weeks apart; edges never cross time steps.
-Each node has $D=166$ anonymised features: the time step, 93 local features (LF; e.g.\ fees, input/output counts and volumes) and 72 aggregates over one-hop neighbours (AF).
-From the edge list we add in/out degree and two-hop aggregates (mean of the neighbours' AF).
-\S1 defines the unit of detection and gives a normal and an anomalous example.
+It contains $N=203{,}769$ transactions and 234,355 edges in 49 time steps about two weeks apart; no edge crosses time steps (verified: 0 of 234,355), so graph features never mix periods.
+Each node has $D=166$ anonymised features: the time step, 93 local features (LF; e.g.\ fees, input/output counts) and 72 one-hop neighbour aggregates (AF); we add in/out degree and two-hop aggregates (mean of the neighbours' AF). Unit and examples: \S1.
 
 \paragraph{Labels.}
-Ground truth comes from a heuristics-based labelling of the entities behind each transaction \citep{weber2019aml}: 4,545 illicit, 42,019 licit, and 157,205 \emph{unknown}.
-Labels may be noisy (heuristic, entity-level attribution); unknown transactions contain both classes and are never evaluated, but \ours{} uses them as unlabeled data.
+Heuristic entity-level labelling \citep{weber2019aml} gives 4,545 illicit, 42,019 licit and 157,205 \emph{unknown} transactions; labels may be noisy, and unknown ones (both classes) are never evaluated but serve \ours{} as unlabeled data.
 The paradigm is semi-supervised: licit and unlabeled data for fitting, illicit labels only for validation-based selection.
 
 \begin{table}[t]
@@ -145,8 +141,7 @@ The paradigm is semi-supervised: licit and unlabeled data for fitting, illicit l
 
 \paragraph{Class imbalance.}
 Overall, 2.2\% of transactions are illicit; among labeled ones the ratio is 9.8\% vs.\ 90.2\% (1\,:\,9.2), and on the test split 6.5\% (1\,:\,14.4).
-A model that predicts ``always licit'' reaches 93.5\% test accuracy with zero recall, so we never report accuracy.
-We use threshold-free ranking metrics (PR-AUC) and choose $\tau$ to maximise F1 rather than relying on a 0.5 cut-off.
+``Always licit'' reaches 93.5\% test accuracy with zero recall, so we report PR-AUC and tuned-$\tau$ metrics, never accuracy or a 0.5 cut-off.
 
 % ---------------------------------------------------------------------------
 \section{Exploratory Feature Analysis}
@@ -163,9 +158,9 @@ All statistics use the training split only (Figure~\ref{fig:eda}).
 
 \paragraph{Distribution contrast.}
 Figure~\ref{fig:eda}a shows \texttt{local\_53}, the feature with the largest Kolmogorov--Smirnov (KS) distance between classes (0.66, mutual information 0.21 nats).
-Most illicit transactions sit on a single value ($-0.49$, shared by 83\% of illicit but 18\% of licit training transactions), whereas licit values spread over the whole range.
+Most illicit transactions sit on one value ($-0.49$: 83\% of illicit, 18\% of licit training transactions); licit values spread widely.
 Figure~\ref{fig:eda}b is the key observation: only 1.7\% of illicit transactions have any local feature beyond 3$\sigma$ of the licit distribution, against 22.3\% of licit transactions.
-In PCA space (Figure~\ref{fig:eda}c), illicit points occupy one compact region; licit points scatter over many clusters.
+In PCA space (Figure~\ref{fig:eda}c), illicit points form one compact region.
 
 \paragraph{Separability and redundancy.}
 Local features separate the classes better than one-hop aggregates (mean KS 0.38 vs.\ 0.27; 63 vs.\ 30 features with KS $>0.3$; mean MI 0.088 vs.\ 0.060 nats), degree (0.20) and two-hop aggregates (0.18).
@@ -185,14 +180,14 @@ We test H1--H2 in \S\ref{sec:results}--\ref{sec:ablation} and H3 in \S\ref{sec:a
 \begin{figure}[t]
 \centering
 \begin{tikzpicture}[
-  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=0.85cm, inner sep=2pt, text width=1.95cm},
+  box/.style={draw, rounded corners=2pt, align=center, font=\scriptsize, minimum height=0.95cm, inner sep=2pt, text width=2.05cm},
   arr/.style={-{Latex[length=1.6mm]}, thick}]
-\node[box, fill=gray!10] (x) {Transaction $x$\\93 local features};
-\node[box, fill=blue!8, right=0.3cm of x] (tr) {Train steps 1--29:\\licit $\mathcal{L}$ ($t{=}0$)\\unknown $\mathcal{U}$ ($t{=}1$)};
-\node[box, fill=blue!8, right=0.3cm of tr] (m) {XGBoost\\$\hat{P}(t{=}1 \mid x)$};
-\node[box, fill=red!8, below=0.45cm of m] (s) {$s(x)=\hat{P}(t{=}1\mid x)$};
-\node[box, fill=orange!12, left=0.3cm of s] (tau) {$\tau$: best F1 on\\val steps 30--34};
-\node[box, fill=green!10, left=0.3cm of tau] (a) {Alert if $s(x)\ge\tau$\\$\rightarrow$ analyst queue};
+\node[box, fill=gray!10] (x) {\textbf{1 Input}\\$x\in\mathbb{R}^{93}$, local features};
+\node[box, fill=blue!8, right=0.25cm of x] (tr) {\textbf{2 Preprocess, split}\\drop time step; steps 1--29: licit $t{=}0$, unknown $t{=}1$};
+\node[box, fill=blue!8, right=0.25cm of tr] (m) {\textbf{3 Model}\\XGBoost, licit vs.\ unknown};
+\node[box, fill=red!8, below=0.4cm of m] (s) {\textbf{4 Score}\\$s(x)=\hat{P}(t{=}1\mid x)$};
+\node[box, fill=orange!12, left=0.25cm of s] (tau) {\textbf{5 Threshold}\\$\tau_{\mathrm{F1}}$ or $\tau_r$ on val steps 30--34};
+\node[box, fill=green!10, left=0.25cm of tau] (a) {\textbf{6 Alert, metrics}\\alert if $s(x)\ge\tau$; test steps 35--49};
 \draw[arr] (x) -- (tr);
 \draw[arr] (tr) -- (m);
 \draw[arr] (m) -- (s);
@@ -204,21 +199,19 @@ We test H1--H2 in \S\ref{sec:results}--\ref{sec:ablation} and H3 in \S\ref{sec:a
 \end{figure}
 
 \paragraph{Pipeline.}
-Figure~\ref{fig:pipeline} shows the Tier~2 pipeline.
-The input is the 93 local features of a transaction, used as released (already scaled); the time step is dropped so that the model cannot memorise periods.
-We build a training set from the training steps: every labeled licit transaction gets target $t=0$ and every unknown transaction gets $t=1$ (23,510 vs.\ 94,423 rows); illicit training rows are \emph{not} used.
+Figure~\ref{fig:pipeline} shows the six checkpoints of the Tier~2 pipeline.
+The input is the 93 local features, used as released (already scaled); the time step is dropped so the model cannot memorise periods.
+In the training steps, labeled licit transactions get target $t=0$ and unknown ones $t=1$ (23,510 vs.\ 94,423 rows); illicit training rows are \emph{not} used.
 An XGBoost classifier (300 trees, depth 6, learning rate 0.1, row/column subsampling 0.8) learns $\hat{P}(t{=}1\mid x)$.
 
 \paragraph{Anomaly score.}
-The score is $s(x)=\hat{P}(t{=}1\mid x)$.
-For a well-calibrated classifier, $s$ is monotone in the density ratio $p_{\mathcal{U}}(x)/p_{\mathcal{L}}(x)$.
-If the unknown pool is a mixture $p_{\mathcal{U}}=\pi\,p_{\text{ill}}+(1-\pi)\,p_{\text{lic}}$ and labeled licit data follow $p_{\text{lic}}$, the ratio equals $(1-\pi)+\pi\,p_{\text{ill}}(x)/p_{\text{lic}}(x)$ and therefore ranks transactions exactly by how much more likely they are under the illicit than the licit distribution \citep{elkan2008pu}.
-Unlike an outlier score, this ranking rewards a dense illicit mode that licit data rarely reach (H2).
+For a well-calibrated classifier, $s(x)=\hat{P}(t{=}1\mid x)$ is monotone in the density ratio $p_{\mathcal{U}}(x)/p_{\mathcal{L}}(x)$.
+If the unknown pool is a mixture $p_{\mathcal{U}}=\pi\,p_{\text{ill}}+(1-\pi)\,p_{\text{lic}}$ and labeled licit data follow $p_{\text{lic}}$, the ratio equals $(1-\pi)+\pi\,p_{\text{ill}}(x)/p_{\text{lic}}(x)$ and ranks transactions by how much likelier they are under the illicit than the licit distribution \citep{elkan2008pu}, rewarding a dense illicit mode that licit data rarely reach (H2).
 
 \paragraph{Threshold and error costs.}
 An FN lets laundered funds pass (regulatory risk); an FP costs analyst time.
 With cost ratio $r=c_{\mathrm{FN}}/c_{\mathrm{FP}}$, the cost-optimal $\tau_r$ minimises $r\cdot\mathrm{FN}+\mathrm{FP}$ on the labeled validation transactions (steps 30--34; the test split is never used).
-Since $r$ is each provider's choice, all tiers are compared at $\tau_{\mathrm{F1}}$, the validation-F1 maximiser; it behaves like $r\approx1$, so it does \emph{not} encode a costlier FN, and \S\ref{sec:ablation} shows how alerts and recall grow with $r$.
+As $r$ is each provider's choice, tiers are compared at the validation-F1 maximiser $\tau_{\mathrm{F1}}$, which behaves like $r\approx1$ (no costlier FN); \S\ref{sec:ablation} sweeps $r$.
 
 % ---------------------------------------------------------------------------
 \section{Experimental Setup}
@@ -227,45 +220,43 @@ Since $r$ is each provider's choice, all tiers are compared at $\tau_{\mathrm{F1
 \paragraph{Split and leakage prevention.}
 All methods share one chronological split by time step (Table~\ref{tab:data}): train 1--29, validation 30--34, test 35--49, i.e.\ 59/10/31\% of steps and 57/8/36\% of labeled transactions.
 One-class models fit licit training rows only; \ours{} fits licit and unknown training rows; supervised models fit labeled training rows.
-Scalers (3$\sigma$, LOF, $k$NN) are fit on licit training rows; the test set is scored once per seed.
+Scalers are fit on licit training rows; the test set is scored once per seed.
 
 \paragraph{Configurations.}
 \ours{}: feature set $\in$\{LF, AF, AF+degree\}, depth $\in\{4,6,8\}$ and trees $\in\{100,300\}$, chosen by validation PR-AUC (LF, 6, 300; 0.901).
 Isolation Forest: 200 trees, \texttt{max\_samples} $\in\{256,2048\}$ (2048, LF).
-Random Forest as in \citet{weber2019aml} (50 trees, 50 features per split, AF); XGBoost as \ours{}, on AF.
-GNNs (PyTorch Geometric, \citealp{fey2019pyg}): two GCN or GraphSAGE layers, full-batch (edges never cross steps), Adam (learning rate 0.01), early stopping on validation PR-AUC (${\le}$1000 epochs, patience 100); validation picked GraphSAGE, width 64 (of 64/128) and AF for both roles.
-Grids span common small/medium settings; Tier~3 reuses Weber's RF and \ours{}'s XGBoost settings, so only supervision differs.
-Stochastic methods use 5 seeds; deterministic ones (3$\sigma$, Mahalanobis, LOF, $k$NN ratio) report the std of test PR-AUC over 1,000 bootstrap resamples ($\dagger$). Software: Python 3.13, scikit-learn 1.9 \citep{pedregosa2011sklearn}, XGBoost 3.4, PyTorch 2.14; hardware: 4 vCPUs, 16\,GB RAM, no GPU.
+RF as in \citet{weber2019aml} (50 trees, 50 features per split, AF); XGBoost as \ours{}, on AF.
+GNNs (PyTorch Geometric, \citealp{fey2019pyg}): two GCN or GraphSAGE layers, full-batch, Adam (rate 0.01), early stopping on validation PR-AUC (${\le}$1000 epochs, patience 100); validation picked GraphSAGE, width 64 (of 64/128), AF.
+Depth 4--8 and 100--300 trees span shallow to moderate boosting for ${\sim}10^5$ rows, selected on validation; Tier~3 reuses Weber's RF and \ours{}'s XGBoost settings, so only supervision differs.
+Stochastic methods use 5 seeds; deterministic ones (3$\sigma$, Mahalanobis, LOF, $k$NN ratio) report a 1,000-resample test bootstrap std ($\dagger$). Software: Python 3.13, scikit-learn 1.9 \citep{pedregosa2011sklearn}, XGBoost 3.4, PyTorch 2.14; hardware: 4 vCPUs, 16\,GB RAM, no GPU.
 
 \paragraph{Metrics.}
-(1) \textbf{PR-AUC} (average precision) is our primary metric: it ignores the large number of easy true negatives and is informative under imbalance \citep{saito2015prc}; its random baseline equals the prevalence.
-(2) \textbf{P@100}, the precision of the 100 highest-scored test transactions, models a fixed analyst budget.
-(3) \textbf{F1@$\tau$} evaluates the deployed decision.
-ROC-AUC is reported to show inversion ($<0.5$).
+\textbf{PR-AUC} (primary) ignores the many easy true negatives and suits imbalance \citep{saito2015prc}; its random baseline is the prevalence.
+\textbf{P@100}, the precision of the 100 top-scored test transactions, models a fixed analyst budget; \textbf{F1@$\tau$} evaluates the deployed decision; ROC-AUC shows inversion ($<0.5$).
 
 % ---------------------------------------------------------------------------
 \section{Results}
 \label{sec:results}
 
 \begin{table*}[t]
-\centering\small
-\setlength{\tabcolsep}{2.3pt}
+\centering\footnotesize
+\setlength{\tabcolsep}{1.6pt}
 \input{tables/main.tex}
-\caption{Test results (labeled transactions of steps 35--49), mean\,$\pm$\,std over 5 seeds; $\dagger$: std over 1,000 test bootstrap resamples for the deterministic 3$\sigma$ rule. F1 uses $\tau_{\mathrm{F1}}$ tuned on validation (3$\sigma$ rule: $\tau=3$). Best per column in bold. Period columns split the test set at the dark-market shutdown (step 43).}
+\caption{Test results (labeled transactions of steps 35--49), mean\,$\pm$\,std over 5 seeds; $\dagger$: std over 1,000 test bootstrap resamples for the deterministic 3$\sigma$ rule. F1 uses $\tau_{\mathrm{F1}}$ tuned on validation (3$\sigma$ rule: $\tau=3$). Best per column in bold; prevalence = random PR-AUC. Period columns split the test set at the dark-market shutdown (step 43); period F1 pools alerts within each period.}
 \label{tab:main}
 \end{table*}
 
 \paragraph{Main comparison.}
-Table~\ref{tab:main} supports H1: the 3$\sigma$ rule and the one-class Isolation Forest rank illicit transactions below licit ones (ROC-AUC 0.33 and 0.17) and fall under the random baseline in PR-AUC.
-Their val-tuned $\tau$ degenerates to ``alert on everything'' (F1 0.12).
+Table~\ref{tab:main} supports H1: 3$\sigma$ and the one-class Isolation Forest rank illicit below licit transactions (ROC-AUC 0.33, 0.17) and fall under random PR-AUC.
+The 3$\sigma$ rule (fixed $\tau=3$) reaches F1 0.010, and Isolation Forest's val-tuned $\tau$ degenerates to ``alert on everything'' (F1 0.121, as for random scores).
 \ours{} supports H2: PR-AUC rises to 0.546\,$\pm$\,0.024 (8.4$\times$ prevalence) and 82\% of its top-100 alerts are illicit.
 Bootstrap 95\% CIs of the PR-AUC gap from \ours{}: random [0.45, 0.51], 3$\sigma$ [0.46, 0.53], IF [0.48, 0.54], RF [$-$0.24, $-$0.20], XGBoost [$-$0.27, $-$0.22], GraphSAGE [$-$0.04, 0.03]; paired $t$-tests over seeds agree ($p<10^{-4}$ except GraphSAGE).
 
 \paragraph{Against Tier 3.}
 Supervised trees remain clearly better (XGBoost 0.790, RF 0.767), though \ours{} recovers 69\% of XGBoost's PR-AUC without illicit labels.
 The gap is not a feature confound: on LF, as \ours{} uses, RF and XGBoost still reach 0.742 and 0.766 (5 seeds, std $\le$0.002).
-It loses because it learns ``unlabeled-like'' rather than ``illicit'': licit transactions resembling the unlabeled mass also score high (\S\ref{sec:analysis}).
-RF's F1 varies across seeds (0.42--0.80) while its PR-AUC does not: a $\tau$ tuned at 16.8\% validation prevalence transfers poorly to 6.5\% at test.
+It loses because it learns ``unlabeled-like'', not ``illicit'' (verified in \S\ref{sec:analysis}).
+RF's F1 varies across seeds (0.42--0.80) unlike its PR-AUC: a $\tau$ tuned at 16.8\% validation prevalence transfers poorly to 6.5\%.
 Trees train in under 6\,s and GNNs in 2--5\,min; all score in 1--12\,$\mu$s per transaction.
 
 \paragraph{Message passing (Graph-specific).}
@@ -286,53 +277,60 @@ Inside \ours{}, message passing fails (T2$''$, 0.189): averaging over neighbourh
 \begin{table*}[t]
 \centering\small
 \input{tables/cases.tex}
-\caption{Failure cases of \ours{} (seed 0, $\tau=0.97027$; alert if $s\ge\tau$). RF = supervised Random Forest score (mean of seeds; mean $\tau\approx0.37$). Top SHAP = local feature L$k$ (\texttt{local\_}$k$) with the largest $|$TreeSHAP$|$: value (attribution in log-odds).}
+\caption{Failure cases of \ours{} (seed 0, $\tau=0.97027$; alert if $s\ge\tau$); the text refers to them by key \#1--\#4. RF = supervised Random Forest score (mean of seeds; mean $\tau\approx0.37$). Top SHAP = local feature L$k$ (\texttt{local\_}$k$) with the largest $|$TreeSHAP$|$: value (attribution in log-odds).}
 \label{tab:cases}
 \end{table*}
 
-Table~\ref{tab:ablation} varies one factor at a time; the configuration was fixed on validation (\S\ref{sec:setup}) before any ablation, and every conclusion also holds on validation (Val).
+Table~\ref{tab:ablation} varies one factor at a time; the configuration was fixed on validation (\S\ref{sec:setup}) before any ablation, test labels never chose among settings, and every conclusion also holds on validation (Val).
 
 \paragraph{A1: contamination of the normal labels (AD-specific).}
 Replacing just 1\% of the licit training rows with illicit ones (235 rows) cuts PR-AUC from 0.546 to 0.142, far beyond the seed std.
 As illicit transactions form one compact mode, a few hundred of them labeled $t=0$ teach the classifier that this mode is ``licit'': \ours{} needs clean licit labels.
 
 \paragraph{A2: size of the unlabeled pool (AD-specific).}
-5\% of the unknown pool (4.7k rows) gives the same PR-AUC (0.546); differences stay within one std, so a small unlabeled sample already holds the illicit mode.
+5\% of the unknown pool (4.7k rows) gives the same PR-AUC (0.546); no change is significant (Welch $t$-test over seeds, $p\ge0.37$), so a small unlabeled sample already holds the illicit mode.
 
 \paragraph{A3: scoring function (AD-specific).}
 With features and data fixed, outlier scores invert (Isolation Forest 0.037; Mahalanobis with Ledoit--Wolf shrinkage, \citealp{ledoit2004shrinkage}, 0.038), local density scores (LOF, \citealp{breunig2000lof}; a licit/unlabeled $k$NN density ratio) recover some signal (0.19), and the classifier-based density ratio is best (0.546).
 
 \paragraph{A4: graph features (Graph-specific).}
-One-hop aggregates ($+$0.011), degree ($-$0.037) and two-hop aggregates ($-$0.010) change test PR-AUC by less than one seed std and lower test F1 (0.30--0.35 vs.\ 0.40), which supports H3; on validation, LF is clearly best (0.871 vs.\ ${\le}$0.783), which is why it was selected.
+One-hop aggregates ($+$0.011), degree ($-$0.037) and two-hop aggregates ($-$0.010) change test PR-AUC insignificantly (Welch $p\ge0.18$) and lower test F1 (0.30--0.35 vs.\ 0.40), which supports H3; on validation, LF is clearly best (0.871 vs.\ ${\le}$0.783), which is why it was selected.
 
 \paragraph{A5: threshold rule.}
-$\tau_{\mathrm{F1}}$ raises 2,459 test alerts (recall 0.65); cost-optimal $\tau_r$ raise 2,333 for $r=1$ (recall 0.64), 3,149 for $r=5$ (0.71), 3,952 for $r=10$ (0.75) and 4,979 for $r=20$ (0.78), all std $\le$0.03.
-So $\tau_{\mathrm{F1}}$ acts like $r\approx1$; a provider weighting a miss as ten false alerts should accept 1.6$\times$ more alerts.
-The label-free 95th-percentile rule (5,420 alerts, recall 0.80) acts like $r>20$; 30 alerts per step give the best precision, 0.48, at recall 0.20.
+Table~\ref{tab:threshold} shows that $\tau_{\mathrm{F1}}$ behaves like $r\approx1$, and that each step up in $r$ buys recall with more false alerts per catch.
+For a compliance provider we recommend fixing $r$ explicitly; with $r=10$ (a miss costs ten reviews), $\tau_{10}$ raises 3,952 alerts (${\approx}$264 per two-week step) for recall 0.75 at 3.9 false alerts per catch.
+
+\begin{table}[t]
+\centering\small
+\setlength{\tabcolsep}{3pt}
+\input{tables/threshold.tex}
+\caption{Alert rules for \ours{} on the test split (15 steps), mean of 5 seeds (precision/recall std $\le$0.03); $\tau_r$ minimises $r\cdot\mathrm{FN}+\mathrm{FP}$ on validation.}
+\label{tab:threshold}
+\end{table}
 
 % ---------------------------------------------------------------------------
 \section{Analysis}
 \label{sec:analysis}
 
 \paragraph{Temporal failure.}
-We reproduce the observation of \citet{weber2019aml}: after a dark market closes at step 43, every model fails (Table~\ref{tab:main}, period columns).
-\ours{}'s F1 drops from 0.50 (steps 35--42) to 0.01 (43--49), and its PR-AUC from 0.743 to 0.025, which equals the prevalence (Table~\ref{tab:main}).
-Only 15.6\% of test illicit transactions fall in steps 43--49, but they account for 42\% of the misses of \ours{}.
-Of the 398 misses (seed 0, $\tau=0.97027$), 69\% are also missed by supervised RF: the blind spot lies in the data, not in the missing labels.
+As in \citet{weber2019aml}, every model fails after a dark market closes at step 43 (Table~\ref{tab:main}): \ours{}'s F1 drops from 0.54 to 0.01 and its PR-AUC from 0.743 to 0.025, the prevalence.
+The new illicit population leaves the illicit mode: \texttt{local\_53}$=-0.49$ holds for 84\% of illicit test transactions before step 43 but only 2\% after (training: 77\%), so for the 166 post-shutdown misses this feature contributes $-$0.33 log-odds instead of $+$1.03 for earlier hits.
+Steps 43--49 hold 15.6\% of test illicit transactions but 42\% of the 398 misses (seed 0), and 69\% of all misses are shared by supervised RF: the blind spot lies in the data, not the missing labels.
 
 
 \paragraph{Failure cases.}
 Table~\ref{tab:cases} lists four test errors.
-\#1 is a complete inversion ($s-\tau=-0.956$): \texttt{local\_48} (SHAP $-$1.54) and \texttt{local\_53}$=1.81$ ($-$1.53), above 99.6\% of illicit but at the 63rd percentile of licit training transactions, pull its score down; RF misses it too (0.04).
+\#1 is a complete inversion ($s-\tau=-0.956$): \texttt{local\_48} (TreeSHAP $-$1.54 log-odds) and \texttt{local\_53}$=1.81$ ($-$1.53), above 99.6\% of illicit but at the 63rd percentile of licit training transactions, pull its score down; RF misses it too (0.04).
 \#2 (FN) and \#4 (FP) fall on either side of $\tau=0.97027$ ($s-\tau=-5.1{\times}10^{-4}$ and $+3.8{\times}10^{-5}$): they share 73 of 93 local features (L2 distance 4.1 vs.\ a median of 10.2 to licit transactions) yet carry opposite labels.
 Label noise or entities reusing one wallet software are plausible but unverifiable causes, as Elliptic anonymises entities.
-\#3 is a confident FP ($s=0.99995$): a licit transaction on the illicit mode \texttt{local\_53}$=-0.49$ that RF correctly scores 0.03; without illicit labels, \ours{} cannot tell which unlabeled mass is illicit.
+\#3 is a confident FP ($s=0.99995$) on the illicit mode \texttt{local\_53}$=-0.49$ that RF scores 0.03.
+The ``unlabeled-like'' mechanism shows directly: among their 10 nearest training neighbours, licit FPs have 94\% unknown transactions, licit TNs 47\% (pool: 80\%).
 \textbf{Shared pattern}: errors stem from overlapping modes and post-shutdown drift, not capacity; the first fix is a few analyst-confirmed labels from the new period (active learning, \citealp{lorenz2020label}).
 
 \paragraph{Interpretability.}
-With exact TreeSHAP \citep{lundberg2020treeshap}, globally (mean $|$SHAP$|$ over test illicit transactions), \texttt{local\_53} (0.88 log-odds), \texttt{local\_47} and \texttt{local\_76} (0.56 each) dominate; \texttt{local\_53} is also the top EDA feature, so the model uses the illicit mode of \S\ref{sec:eda}.
+By exact TreeSHAP \citep{lundberg2020treeshap} (mean $|$SHAP$|$ over test illicit), \texttt{local\_53} (0.88 log-odds), \texttt{local\_47} and \texttt{local\_76} (0.56) dominate: the model uses the illicit mode of \S\ref{sec:eda}.
 For the highest-scored true positive, tx 162428632 ($s=0.99990$, RF 0.94), \texttt{local\_53}$=-0.49$ adds 1.23 log-odds and five other features 0.4--0.9 each.
-For an analyst this is a reason to review, not proof.
+An analyst escalates when the attribution sits on the known illicit mode and dismisses when a licit counterparty explains it: a reason to review, not proof.
 
 \paragraph{Practical impact.}
 At $\tau_{\mathrm{F1}}$, \ours{} raises 2,459 alerts over 15 steps (${\approx}$164 per two-week step) and catches 65\% (${\approx}$704) of the 1,083 illicit test transactions; 71\% of alerts are false, i.e.\ 2.5 per catch.
@@ -342,22 +340,24 @@ With 30 alerts per step (450 in total), \ours{} catches 218 illicit transactions
 \section{Conclusion and Limitations}
 
 \paragraph{Key findings.}
-Yes, with qualifications: a detector fitted only on licit and unlabeled transactions ranks illicit Bitcoin transactions far above chance on future steps (PR-AUC 0.546 vs.\ 0.065; P@100 0.82), whereas outlier detectors invert (ROC-AUC 0.17), because illicit transactions form a compact, non-extreme mode.
-It matches a supervised GraphSAGE and reaches 69\% of supervised XGBoost's PR-AUC, but it fails after the dark-market shutdown, like every model we tested.
+Yes, with qualifications: fitted only on licit and unlabeled transactions, \ours{} ranks future illicit transactions far above chance (PR-AUC 0.546 vs.\ 0.065; P@100 0.82) where outlier detectors invert, because illicit transactions form a compact, non-extreme mode.
+It matches a supervised GraphSAGE and reaches 69\% of XGBoost's PR-AUC, but fails after the dark-market shutdown like every model.
+Verdicts: H1 supported (outlier scores invert), H2 supported (\ours{} 8.4$\times$ prevalence), H3 supported (no graph context helps significantly).
 
 \paragraph{Reflection and future work.}
-The decision that mattered most was testing outlyingness in EDA (Figure~\ref{fig:eda}b); starting again, we would do it before implementing any one-class model.
-Next steps: (i) query analyst labels for the highest-scoring unlabeled transactions after a drift alarm, to address the post-shutdown misses; (ii) estimate the class prior $\pi$ of the unlabeled pool \citep{bekker2020pu} to calibrate $\tau$ across periods.
+The decisive step was testing outlyingness in EDA (Figure~\ref{fig:eda}b); we would now do it before any one-class model.
+Next: (i) after a drift alarm, query analyst labels for top-scored unlabeled transactions to fix post-shutdown misses; (ii) estimate the unlabeled class prior $\pi$ \citep{bekker2020pu} to calibrate $\tau$ across periods.
 
 \paragraph{Limitations.}
-\emph{Data coverage}: one blockchain, 49 two-week steps, heuristic entity-level labels and anonymised features; 77\% of transactions are unlabeled, so scores refer to labeled ones only.
+\emph{Data coverage}: one blockchain, 49 two-week steps, heuristic entity-level labels and anonymised features (with real features we would add address-cluster age and velocity); 77\% of transactions are unlabeled, so scores refer to labeled ones only.
 \emph{Assumptions}: \ours{} assumes clean licit labels (A1 shows 1\% noise is fatal) and that the unlabeled pool contains the illicit modes of the future, which fails after the shutdown.
 \emph{Graph}: multi-hop structure enters as aggregates and two-layer message passing; deeper or temporal GNNs (e.g.\ EvolveGCN) are untested.
 \emph{Generalisation}: the inversion may not hold for genuinely extreme fraud (e.g.\ large one-off thefts).
 
 \paragraph{Deployment considerations.}
-\emph{Concept drift}: illicit behaviour changed abruptly at step 43; retrain every few steps and audit a small labeled sample, as scores alone do not reveal a collapse.
-\emph{Latency and privacy}: scoring takes ${\approx}1.5\,\mu$s per transaction, far below block times; blockchain data are public, but linking addresses to people falls under data-protection and AML rules.
+\emph{Concept drift}: illicit behaviour changed abruptly at step 43; audit the top 30 alerts per step and retrain when their precision falls below half of its deployment value, as scores alone do not reveal a collapse.
+\emph{Inputs}: the unlabeled pool is every other transaction the provider observes on-chain, and 30 alerts per two-week step is about three reviews per working day.
+\emph{Latency and privacy}: scoring takes ${\approx}1.5\,\mu$s per transaction; linking public addresses to people falls under data-protection and AML rules.
 
 % ---------------------------------------------------------------------------
 \section*{Contributions of Each Member}
