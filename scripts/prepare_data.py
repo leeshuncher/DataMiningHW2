@@ -77,6 +77,8 @@ def summarize(nodes, edges):
     return {
         "n_features": N_LOCAL + N_AGG + 1,
         "n_edges": len(edges),
+        "edges_crossing_time_steps": int((nodes.set_index("txId")["time_step"][edges["src"]].to_numpy()
+                                          != nodes.set_index("txId")["time_step"][edges["dst"]].to_numpy()).sum()),
         "time_steps": [int(nodes["time_step"].min()), int(nodes["time_step"].max())],
         "splits": {name: {"time_steps": list(SPLITS[name]), **counts(nodes[nodes["split"] == name])}
                    for name in SPLITS},

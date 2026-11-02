@@ -17,5 +17,32 @@ sig T3b XGBoost (sup.) {'gap_mean': -0.2438204329045215, 'paired_t_p': 3.2129128
  ],
  "fn_far_below_tau_share": 0.4824120603015075,
  "fp_zero_in_degree_share": 0.33201581027667987,
- "licit_zero_in_degree_share": 0.35349971129787644
+ "licit_zero_in_degree_share": 0.35349971129787644,
+ "unknown_share_10nn": {
+  "FP": 0.9419631093544137,
+  "TN": 0.46891747814343593,
+  "TP": 0.9899270072992701,
+  "FN": 0.6530150753768844
+ },
+ "unknown_share_pool": 0.8006495213383871,
+ "illicit_on_mode_share": {
+  "train": 0.7652385928247997,
+  "test_before": 0.8391684901531729,
+  "test_from": 0.01775147928994083
+ },
+ "case1_local_53_percentile": {
+  "illicit": 0.9965168930686172,
+  "licit": 0.6265418970650787
+ },
+ "case2_vs_case4": {
+  "equal_features_atol_1e-4": 73,
+  "n_features": 93,
+  "l2": 4.056467533111572,
+  "median_l2_case2_to_licit_train": 10.179926872253418
+ },
+ "shap_local_53": {
+  "post_shutdown_fn": -0.3285287618637085,
+  "pre_shutdown_tp": 1.0336710214614868,
+  "n_post_shutdown_fn": 166
+ }
 }

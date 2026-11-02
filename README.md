@@ -9,7 +9,7 @@ Data category: **Graph**.
   transactions *below* normal ones (test ROC-AUC 0.17).
 - **Method (Tier 2, LvU):** a positive-unlabeled detector. An XGBoost classifier separates labeled
   licit transactions from unlabeled ones, and its output P(unlabeled | x) is the anomaly score.
-  Illicit labels are used only to set the threshold on the validation steps.
+  Illicit labels are used only on the validation steps, to select hyperparameters and set the threshold.
 
 Report: [`paper/HW2_G13_report.pdf`](paper/HW2_G13_report.pdf). Anonymised draft for the LLM TA
 Judge: [`paper/HW2_G13_report_review.pdf`](paper/HW2_G13_report_review.pdf).
@@ -49,7 +49,7 @@ python experiments/run_ablations.py   # §7.1 (~15 min)
 python experiments/analysis.py        # significance, per-step, error analysis, SHAP (~10 min)
 python paper/make_tables.py           # LaTeX tables from results/*.json
 cd paper && for f in HW2_G13_report HW2_G13_report_review; do
-  pdflatex $f && bibtex $f && pdflatex $f && pdflatex $f; done
+  pdflatex $f && bibtex $f && pdflatex $f && pdflatex $f && pdflatex $f; done
 ```
 
 `HW2_G13_report_review.tex` builds the anonymised draft from the same source:

@@ -13,10 +13,10 @@ OUT = ROOT / "paper" / "tables"
 OURS = "T2 Licit-vs-Unlabeled (ours)"
 DISPLAY = {
     "T1a random": ("T1a", "Random score"),
-    "T1b 3-sigma": ("T1b", r"3$\sigma$ rule (max $|z|$)"),
-    "T2' IForest (one-class)": ("T2$'$", "One-class Isolation Forest"),
-    OURS: ("T2", r"\textbf{LvU classifier (ours)}"),
-    "T3a RandomForest (sup.)": ("T3a", "Random Forest (sup.)"),
+    "T1b 3-sigma": ("T1b", r"3$\sigma$ rule"),
+    "T2' IForest (one-class)": ("T2$'$", "One-class IF"),
+    OURS: ("T2", r"\textbf{LvU (ours)}"),
+    "T3a RandomForest (sup.)": ("T3a", "RF (sup.)"),
     "T3b XGBoost (sup.)": ("T3b", "XGBoost (sup.)"),
 }
 
@@ -57,36 +57,56 @@ def data_table():
 CONV_NAME = {"gcn": "GCN", "sage": "GraphSAGE"}
 
 
+SHUTDOWN_STEP = 43
+
+
+def period_f1(runs, n_illicit):
+    """Pooled F1@tau before / from the shutdown, from per-step alerts and recall (mean over seeds)."""
+    out = {"before": [], "from": []}
+    for r in runs:
+        for period, keep in [("before", lambda t: t < SHUTDOWN_STEP), ("from", lambda t: t >= SHUTDOWN_STEP)]:
+            steps = [t for t in r["per_step"] if keep(int(t))]
+            tp = sum(r["per_step"][t]["recall"] * n_illicit[t] for t in steps)
+            alerts = sum(r["per_step"][t]["alerts"] for t in steps)
+            pos = sum(n_illicit[t] for t in steps)
+            out[period].append(2 * tp / (alerts + pos))
+    return {k: sum(v) / len(v) for k, v in out.items()}
+
+
 def main_table():
     main, ana, gnn = load("main.json"), load("analysis.json"), load("gnn.json")
     pre = ana["pr_auc_shutdown"]
+    n_illicit = {t: v["n_illicit"] for t, v in main[OURS]["runs"][0]["per_step"].items()}
     for name, res in main.items():
         if len(res["runs"]) == 1:  # deterministic: report the test-bootstrap std
             res["summary"]["pr_auc"]["boot_std"] = ana["bootstrap_std"][name]
-    # (tier, label, summary, PR-AUC before / from the shutdown), in table order; None = rule.
+    # (tier, label, summary, PR-AUC before / from the shutdown, runs), in table order; None = rule.
     entries = []
     for name, (tier, label) in DISPLAY.items():
         if tier == "T2":
             g = gnn["T2'' LvU-GNN"]
             entries.append(("T2$''$", f"LvU-{CONV_NAME[g['config']['conv']]}", g["summary"],
-                            g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"]))
-        entries.append((tier, label, main[name]["summary"], pre[name]["before"], pre[name]["from"]))
+                            g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"], g["runs"]))
+        entries.append((tier, label, main[name]["summary"], pre[name]["before"], pre[name]["from"],
+                         main[name]["runs"]))
         if tier in ("T1b", "T2"):
             entries.append(None)
     g = gnn["T3c GNN (sup.)"]
     entries.append(("T3c", f"{CONV_NAME[g['config']['conv']]} (sup.)", g["summary"],
-                    g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"]))
+                    g["summary"]["pr_auc_before"], g["summary"]["pr_auc_from"], g["runs"]))
 
     cols = ["pr_auc", "roc_auc", "f1", "p_at_k"]
     rows_ = [e for e in entries if e]
     best = {c: max(e[2][c]["mean"] for e in rows_) for c in cols}
     best_pre = max(e[3] for e in rows_)
+    f1p = {e[1]: period_f1(e[5], n_illicit) for e in rows_}
+    best_f1_pre = max(v["before"] for v in f1p.values())
     rows = []
     for e in entries:
         if e is None:
             rows.append(r"\midrule")
             continue
-        tier, label, s, before, after = e
+        tier, label, s, before, after, _ = e
         cells = []
         for c in cols:
             v = pm(s[c])
@@ -94,20 +114,40 @@ def main_table():
         p = f"{before:.3f}"
         cells.append(rf"\textbf{{{p}}}" if abs(before - best_pre) < 1e-9 else p)
         cells.append(f"{after:.3f}")
+        f = f"{f1p[label]['before']:.2f}"
+        cells.append(rf"\textbf{{{f}}}" if abs(f1p[label]["before"] - best_f1_pre) < 1e-9 else f)
+        cells.append(f"{f1p[label]['from']:.2f}")
         fit = s["fit_s"]["mean"]
         cells.append(f"{fit:.0f}" if fit >= 10 else f"{fit:.1f}")
         cells.append(f"{1000 * s['ms_per_sample']['mean']:.1f}")
         rows.append(f"{tier} & {label} & " + " & ".join(cells) + r" \\")
     prev = pre[OURS]
     write("main.tex", "\n".join([
-        r"\begin{tabular}{@{}llcccccccc@{}}", r"\toprule",
-        r" & & & & & & \multicolumn{2}{c}{PR-AUC by period} & Fit & Score \\",
-        r"\cmidrule(lr){7-8}",
-        r"Tier & Method & PR-AUC & ROC-AUC & F1@$\tau$ & P@100 & steps 35--42 & 43--49 & (s) & ($\mu$s/tx) \\",
+        r"\begin{tabular}{@{}llcccccccccc@{}}", r"\toprule",
+        r" & & & & & & \multicolumn{2}{c}{PR-AUC, steps} & \multicolumn{2}{c}{F1, steps} & Fit & Score \\",
+        r"\cmidrule(lr){7-8}\cmidrule(lr){9-10}",
+        r"Tier & Method & PR-AUC & ROC-AUC & F1@$\tau$ & P@100 & 35--42 & 43--49 & 35--42 & 43--49 & (s) & ($\mu$s/tx) \\",
         r"\midrule", *rows,
-        rf"\multicolumn{{2}}{{l}}{{\emph{{prevalence (= random PR-AUC)}}}} & 0.065 & & & & "
-        rf"{prev['prevalence_before']:.3f} & {prev['prevalence_from']:.3f} & & \\",
+        rf"\multicolumn{{2}}{{l}}{{\emph{{prevalence}}}} & 0.065 & & & & "
+        rf"{prev['prevalence_before']:.3f} & {prev['prevalence_from']:.3f} & & & & \\",
         r"\bottomrule", r"\end{tabular}", ""]))
+
+
+def threshold_table():
+    ab = load("ablations.json")["A5_threshold"]
+    labels = {"best_f1": r"$\tau_{\mathrm{F1}}$ (best val.\ F1)", "cost_1": r"$\tau_r$, $r=1$",
+              "cost_5": r"$\tau_r$, $r=5$", "cost_10": r"$\tau_r$, $r=10$", "cost_20": r"$\tau_r$, $r=20$",
+              "licit_p95": r"95th pct.\ licit train", "weekly_budget": r"top 30 per step"}
+    rows = []
+    for k, label in labels.items():
+        m = ab[k]
+        prec = m["precision"]["mean"]
+        rows.append(f"{label} & {m['alerts']['mean']:,.0f} & {prec:.2f} & {m['recall']['mean']:.2f} & "
+                    f"{(1 - prec) / prec:.1f} \\\\")
+    write("threshold.tex", "\n".join([
+        r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
+        r"Alert rule & Alerts & Prec. & Recall & FP/catch \\", r"\midrule",
+        *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
 def ablation_table():
@@ -169,4 +209,5 @@ if __name__ == "__main__":
     data_table()
     main_table()
     ablation_table()
+    threshold_table()
     cases_table()
