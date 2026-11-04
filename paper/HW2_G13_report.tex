@@ -168,7 +168,6 @@ On training edges, 56\% of the labeled neighbours of illicit transactions are il
 \textbf{H1}: Outlier-based scores (3$\sigma$, Isolation Forest, Mahalanobis) will rank illicit transactions \emph{below} licit ones.
 \textbf{H2}: A model that contrasts licit data with unlabeled data will rank them above, because the compact illicit mode is denser in the unlabeled pool than among labeled licit transactions.
 \textbf{H3}: Graph context (aggregates, degree, message passing) will add little, as unknown neighbours dominate.
-We test H1--H2 in \S\ref{sec:results}--\ref{sec:ablation} and H3 in \S\ref{sec:ablation}.
 
 % ---------------------------------------------------------------------------
 \section{Method}
@@ -216,8 +215,9 @@ Tiers are compared at the validation-F1 maximiser $\tau_{\mathrm{F1}}$ ($0.958\p
 
 \paragraph{Split and leakage prevention.}
 All methods share one chronological split by time step (Table~\ref{tab:data}): train 1--29, validation 30--34, test 35--49, i.e.\ 59/10/31\% of steps and 57/8/36\% of labeled transactions.
-One-class models fit licit training rows only; \ours{} fits licit and unknown training rows; supervised models fit labeled training rows.
-Detector scalers (3$\sigma$, LOF, $k$NN) are fit on licit training rows; the test set is scored once per seed.
+Training rows per tier (licit / illicit / unknown, steps 1--29): 3$\sigma$, one-class IF, Mahalanobis and LOF 23,510 / 0 / 0 (normal-only); \ours{} and LvU-GraphSAGE 23,510 / 0 / 94,423 (unknown may hide illicit); RF, XGBoost and supervised GraphSAGE 23,510 / 2,871 / 0.
+Every tier tunes on the same 2,922 / 591 validation and is scored on the same 15,587 / 1,083 test transactions; only A1 mixes illicit rows into the licit side.
+Detector scalers use licit training rows; the test set is scored once per seed.
 
 \paragraph{Configurations.}
 \ours{}: feature set $\in$\{LF, AF, AF+degree\}, depth $\in\{4,6,8\}$ and trees $\in\{100,300\}$, chosen by validation PR-AUC (LF, 6, 300; seed-0 search 0.901, 5-seed mean 0.871).
@@ -316,8 +316,7 @@ Steps 43--49 hold 15.6\% of test illicit transactions but 42\% of the 398 misses
 
 
 \paragraph{Failure cases.}
-Table~\ref{tab:cases} lists four test errors.
-\#1 is a complete inversion ($s-\tau=-0.956$): \texttt{local\_48} (TreeSHAP $-$1.54 log-odds) and \texttt{local\_53}$=1.81$ ($-$1.53), above 99.7\% of illicit but at the 63rd percentile of licit training transactions, pull its score down; RF misses it too (0.04).
+In Table~\ref{tab:cases}, \#1 is a complete inversion ($s-\tau=-0.956$): \texttt{local\_48} (TreeSHAP $-$1.54 log-odds) and \texttt{local\_53}$=1.81$ ($-$1.53), above 99.7\% of illicit but at the 63rd percentile of licit training transactions, pull its score down; RF misses it too (0.04).
 \#2 (FN) and \#4 (FP) fall on either side of $\tau=0.97027$ ($s-\tau=-5.1{\times}10^{-4}$ and $+3.8{\times}10^{-5}$): they share 73 of 93 local features (within $10^{-4}$; L2 distance 4.1 vs.\ a median of 10.2 to licit training transactions) yet carry opposite labels.
 Label noise or entities reusing one wallet software are plausible but unverifiable causes, as Elliptic anonymises entities.
 \#3 is a confident FP ($s=0.99995$) on the illicit mode \texttt{local\_53}$=-0.49$ that RF scores 0.03.
@@ -342,19 +341,19 @@ It is indistinguishable in PR-AUC from a supervised GraphSAGE and reaches 69\% o
 Verdicts: H1 and H2 supported; H3 holds for \ours{} but not for supervised trees (one-hop aggregates add 0.024--0.026).
 
 \paragraph{Reflection and future work.}
-The decisive step was testing outlyingness in EDA (Figure~\ref{fig:eda}b); we would now do it before any one-class model.
+The decisive step was testing outlyingness in EDA (Figure~\ref{fig:eda}b), which we would now do first.
 Next: (i) after a drift alarm, query analyst labels for top-scored unlabeled transactions to fix post-shutdown misses; (ii) estimate the unlabeled class prior $\pi$ \citep{bekker2020pu} to calibrate $\tau$ across periods.
 
 \paragraph{Limitations.}
-\emph{Data coverage}: one blockchain, 49 two-week steps, heuristic entity-level labels and anonymised features (with real features we would add address-cluster age and velocity); 77\% of transactions are unlabeled, so scores refer to labeled ones only.
+\emph{Data coverage}: one blockchain, 49 steps, heuristic labels, anonymised features (with real ones we would add address-cluster age and velocity); 77\% of transactions are unlabeled, so scores refer to labeled ones only.
 \emph{Assumptions}: \ours{} assumes clean licit labels (A1 shows 1\% noise is fatal) and that the unlabeled pool contains the illicit modes of the future, which fails after the shutdown.
 \emph{Graph}: deeper or temporal GNNs (e.g.\ EvolveGCN) are untested.
 \emph{Generalisation}: extreme fraud (e.g.\ one-off thefts) may not invert.
 
 \paragraph{Deployment considerations.}
 \emph{Concept drift}: illicit behaviour changed abruptly at step 43; audit the top 30 alerts per step and retrain when their precision falls below half of its deployment value, as scores alone do not reveal a collapse.
-\emph{Inputs}: the unlabeled pool is every other transaction the provider observes on-chain, and 30 alerts per two-week step is about three reviews per working day.
-\emph{Latency and privacy}: ${\approx}1.5\,\mu$s per transaction; linking addresses to people falls under data-protection rules.
+\emph{Inputs}: the unlabeled pool is every other on-chain transaction; 30 alerts per step is ${\approx}$3 reviews per working day.
+\emph{Latency, privacy}: ${\approx}1.5\,\mu$s per transaction; linking addresses to people is regulated.
 
 % ---------------------------------------------------------------------------
 \section*{Contributions of Each Member}
