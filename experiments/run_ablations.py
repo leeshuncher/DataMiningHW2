@@ -100,6 +100,7 @@ def run(nodes, cols, build, seeds, tau_rule="best_f1"):
     keys = ["pr_auc", "roc_auc", "f1", "precision", "recall", "p_at_k", "alerts", "val_pr_auc"]
     out = {k: {"mean": float(np.mean([r[k] for r in runs])), "std": float(np.std([r[k] for r in runs]))}
            for k in keys}
+    out["per_seed"] = {k: [float(r[k]) for r in runs] for k in keys}  # for paired tests across rules
     if len(seeds) == 1:  # deterministic: uncertainty from resampling the test set
         rng = np.random.default_rng(0)
         boot = [average_precision_score(y_test[i], s_test[i])
