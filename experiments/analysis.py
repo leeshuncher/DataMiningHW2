@@ -22,7 +22,7 @@ from sklearn.metrics import average_precision_score
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import StandardScaler
 
-from common import (FEATURE_SETS, FIGURES, RESULTS, SEEDS, LicitVsUnlabeled, labeled, load_nodes,
+from common import (FEATURE_SETS, FIGURES, RESULTS, SEEDS, LicitVsUnlabeled, evaluate, labeled, load_nodes,
                     one_class_train, pu_train, save_json)
 
 plt.rcParams.update({"font.size": 8, "figure.dpi": 150})
@@ -253,6 +253,35 @@ def bootstrap_std(scores):
     return out
 
 
+def bootstrap_std_deterministic(scores, main):
+    """Test-bootstrap std of every Table 3 metric for methods with a single (deterministic) run."""
+    y = scores["label"].to_numpy()
+    rng = np.random.default_rng(1)
+    idx = [rng.integers(0, len(y), len(y)) for _ in range(N_BOOT)]
+    out = {}
+    for name, res in main.items():
+        if len(res["runs"]) != 1:
+            continue
+        s, tau = scores[f"{name}|{res['runs'][0]['seed']}"].to_numpy(), res["runs"][0]["tau"]
+        boot = [evaluate(y[i], s[i], tau) for i in idx]
+        out[name] = {k: float(np.std([b[k] for b in boot])) for k in ["pr_auc", "roc_auc", "f1", "p_at_k"]}
+    return out
+
+
+def threshold_rule_tests():
+    """Paired t-tests over seeds of each A5 alert rule against tau_F1 (same seeds, same scores)."""
+    ab = json.loads((RESULTS / "ablations.json").read_text())["A5_threshold"]
+    base = ab["best_f1"]["per_seed"]
+    out = {}
+    for rule, res in ab.items():
+        if rule == "best_f1":
+            continue
+        out[rule] = {k: {"delta": float(np.mean(res["per_seed"][k]) - np.mean(base[k])),
+                         "p": float(ttest_rel(res["per_seed"][k], base[k]).pvalue)}
+                     for k in ["f1", "precision", "recall"]}
+    return out
+
+
 def budget_comparison(scores, budget=30):
     """Alerts on the top-`budget` labeled test transactions of every step, per method (seed mean)."""
     y, steps = scores["label"].to_numpy(), scores["time_step"].to_numpy()
@@ -302,7 +331,9 @@ def main():
         "impact": practical_impact(main_res, scores),
         "impact_budget30": budget_comparison(scores),
         "bootstrap_std": bootstrap_std(scores),
+        "bootstrap_std_deterministic": bootstrap_std_deterministic(scores, main_res),
         "ablation_welch": ablation_welch(),
+        "threshold_rule_tests": threshold_rule_tests(),
     }
     save_json(out, "analysis.json")
     print(json.dumps(out["error_analysis"]["profile"], indent=1))

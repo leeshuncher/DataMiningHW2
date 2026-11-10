@@ -78,8 +78,9 @@ def main_table():
     pre = ana["pr_auc_shutdown"]
     n_illicit = {t: v["n_illicit"] for t, v in main[OURS]["runs"][0]["per_step"].items()}
     for name, res in main.items():
-        if len(res["runs"]) == 1:  # deterministic: report the test-bootstrap std
-            res["summary"]["pr_auc"]["boot_std"] = ana["bootstrap_std"][name]
+        if len(res["runs"]) == 1:  # deterministic: report the test-bootstrap std of every metric
+            for metric, sd in ana["bootstrap_std_deterministic"][name].items():
+                res["summary"][metric]["boot_std"] = sd
     # (tier, label, summary, PR-AUC before / from the shutdown, runs), in table order; None = rule.
     entries = []
     for name, (tier, label) in DISPLAY.items():
@@ -135,6 +136,7 @@ def main_table():
 
 def threshold_table():
     ab = load("ablations.json")["A5_threshold"]
+    tests = load("analysis.json")["threshold_rule_tests"]
     labels = {"best_f1": r"$\tau_{\mathrm{F1}}$ (best val.\ F1)", "cost_1": r"$\tau_r$, $r=1$",
               "cost_5": r"$\tau_r$, $r=5$", "cost_10": r"$\tau_r$, $r=10$", "cost_20": r"$\tau_r$, $r=20$",
               "licit_p95": r"95th pct.\ licit train", "weekly_budget": r"top 30 per step"}
@@ -142,11 +144,16 @@ def threshold_table():
     for k, label in labels.items():
         m = ab[k]
         prec = m["precision"]["mean"]
+        if k == "best_f1":
+            p = "---"
+        else:
+            pv = tests[k]["f1"]["p"]
+            p = "$<$0.001" if pv < 1e-3 else f"{pv:.2f}"
         rows.append(f"{label} & {m['alerts']['mean']:,.0f} & {prec:.2f} & {m['recall']['mean']:.2f} & "
-                    f"{(1 - prec) / prec:.1f} \\\\")
+                    f"{m['f1']['mean']:.2f} & {(1 - prec) / prec:.1f} & {p} \\\\")
     write("threshold.tex", "\n".join([
-        r"\begin{tabular}{@{}lcccc@{}}", r"\toprule",
-        r"Alert rule & Alerts & Prec. & Recall & FP/catch \\", r"\midrule",
+        r"\begin{tabular}{@{}lcccccc@{}}", r"\toprule",
+        r"Alert rule & Alerts & Prec. & Rec. & F1 & FP/catch & $p$ \\", r"\midrule",
         *rows, r"\bottomrule", r"\end{tabular}", ""]))
 
 
