@@ -137,9 +137,9 @@ def main_table():
 def threshold_table():
     ab = load("ablations.json")["A5_threshold"]
     tests = load("analysis.json")["threshold_rule_tests"]
-    labels = {"best_f1": r"$\tau_{\mathrm{F1}}$ (best val.\ F1)", "cost_1": r"$\tau_r$, $r=1$",
-              "cost_5": r"$\tau_r$, $r=5$", "cost_10": r"$\tau_r$, $r=10$", "cost_20": r"$\tau_r$, $r=20$",
-              "licit_p95": r"95th pct.\ licit train", "weekly_budget": r"top 30 per step"}
+    labels = {"best_f1": r"$\tau_{\mathrm{F1}}$", "cost_1": r"$\tau_1$", "cost_5": r"$\tau_5$",
+              "cost_10": r"$\tau_{10}$", "cost_20": r"$\tau_{20}$",
+              "licit_p95": r"licit 95th pct.", "weekly_budget": r"top 30/step"}
     rows = []
     for k, label in labels.items():
         m = ab[k]

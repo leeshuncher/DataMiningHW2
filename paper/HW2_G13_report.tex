@@ -224,7 +224,7 @@ Detector scalers use licit training rows; the test set is scored once per seed.
 Isolation Forest: 200 trees, \texttt{max\_samples} $\in\{256,2048\}$ (2048, LF).
 RF as in \citet{weber2019aml} (50 trees, 50 features per split, AF); XGBoost as \ours{}, on AF.
 GNNs (PyTorch Geometric, \citealp{fey2019pyg}): two GCN or GraphSAGE layers, full-batch, Adam (rate 0.01), early stopping on validation PR-AUC (${\le}$1000 epochs, patience 100); validation picked GraphSAGE, width 64 and AF (the supervised grid also tried width 128).
-Depth 4--8 and 100--300 trees span shallow to moderate boosting for ${\sim}10^5$ rows, selected on validation; Tier~3 reuses Weber's RF and \ours{}'s XGBoost settings (on AF; an LF control is in \S\ref{sec:results}).
+Depth 4--8 and 100--300 trees span shallow to moderate boosting for ${\sim}10^5$ rows; Tier~3 reuses Weber's RF and \ours{}'s XGBoost settings (on AF; an LF control is in \S\ref{sec:results}).
 Stochastic methods use 5 seeds; deterministic ones (3$\sigma$, Mahalanobis, LOF, $k$NN ratio) report a 1,000-resample test bootstrap std ($\dagger$). Software: Python 3.13, scikit-learn 1.9 \citep{pedregosa2011sklearn}, XGBoost 3.4, PyTorch 2.14; hardware: 4 vCPUs, 16\,GB RAM, no GPU.
 
 \paragraph{Metrics.}
@@ -237,9 +237,9 @@ Stochastic methods use 5 seeds; deterministic ones (3$\sigma$, Mahalanobis, LOF,
 
 \begin{table*}[t]
 \centering\footnotesize
-\setlength{\tabcolsep}{1.6pt}
+\setlength{\tabcolsep}{1.3pt}
 \input{tables/main.tex}
-\caption{Test results (labeled transactions of steps 35--49), mean\,$\pm$\,std over 5 seeds; $\dagger$: std over 1,000 test bootstrap resamples for the deterministic 3$\sigma$ rule. F1 uses $\tau_{\mathrm{F1}}$ tuned on validation (3$\sigma$ rule: $\tau=3$). Best per quality metric in bold (not for steps 43--49, where all methods are near chance); prevalence = random PR-AUC. Period columns split the test set at the dark-market shutdown (step 43); period F1 pools alerts within each period.}
+\caption{Test results (labeled transactions of steps 35--49), mean\,$\pm$\,std over 5 seeds; $\dagger$: std over 1,000 test bootstrap resamples for the deterministic 3$\sigma$ rule (all metrics). F1 uses $\tau_{\mathrm{F1}}$ tuned on validation (3$\sigma$ rule: $\tau=3$). Best per quality metric in bold (not for steps 43--49, where all methods are near chance); prevalence = random PR-AUC. Period columns split the test set at the dark-market shutdown (step 43); period F1 pools alerts within each period.}
 \label{tab:main}
 \end{table*}
 
@@ -288,20 +288,20 @@ As illicit transactions form one compact mode, a few hundred of them labeled $t=
 5\% of the unknown pool (4.7k rows) gives the same PR-AUC (0.546); no change is significant (Welch $t$-test over seeds, $p\ge0.36$), so a small unlabeled sample already holds the illicit mode.
 
 \paragraph{A3: scoring function (AD-specific).}
-With features fixed (one-class scores fit licit rows, PU scores licit and unlabeled rows), outlier scores invert (Isolation Forest 0.037; Mahalanobis with Ledoit--Wolf shrinkage, \citealp{ledoit2004shrinkage}, 0.038), local density scores (LOF with $k{=}20$, \citealp{breunig2000lof}; a licit/unlabeled 10-NN density ratio) recover some signal (0.19), and the classifier-based density ratio is best (0.546).
+With features fixed (one-class on licit rows, PU on licit+unlabeled), outlier scores invert (Isolation Forest 0.037; Mahalanobis with Ledoit--Wolf shrinkage, \citealp{ledoit2004shrinkage}, 0.038), local density scores (LOF with $k{=}20$, \citealp{breunig2000lof}; a licit/unlabeled 10-NN density ratio) recover some signal (0.19), and the classifier-based density ratio is best (0.546).
 
 \paragraph{A4: graph features (Graph-specific).}
 Relative to LF, AF ($+$0.011), AF+degree ($-$0.037) and AF+two-hop ($-$0.010) change test PR-AUC insignificantly (Welch $p\ge0.18$) and lower test F1 (0.30--0.35 vs.\ 0.40), which supports H3; on validation, LF is clearly best (0.871 vs.\ ${\le}$0.783), which is why it was selected.
 
 \paragraph{A5: threshold rule.}
-Table~\ref{tab:threshold} shows that $\tau_{\mathrm{F1}}$ behaves like $r\approx1$, and that each step up in $r$ buys recall with more false alerts per catch.
+In Table~\ref{tab:threshold}, $\tau_1$'s F1 does not differ significantly from $\tau_{\mathrm{F1}}$'s ($p=0.22$), so $\tau_{\mathrm{F1}}$ acts like $r\approx1$; every other rule shifts F1 ($p<0.001$), trading false alerts for recall.
 For a compliance provider we recommend fixing $r$ explicitly; with $r=10$ (a miss costs ten reviews), $\tau_{10}$ raises 3,952 alerts (${\approx}$263 per two-week step) for recall 0.75 at 3.9 false alerts per catch.
 
 \begin{table}[t]
 \centering\small
-\setlength{\tabcolsep}{3pt}
+\setlength{\tabcolsep}{2.5pt}
 \input{tables/threshold.tex}
-\caption{Alert rules for \ours{} on the test split (15 steps), mean of 5 seeds (precision/recall std $\le$0.04); $\tau_r$ minimises $r\cdot\mathrm{FN}+\mathrm{FP}$ on validation.}
+\caption{Alert rules for \ours{} on the test split (15 steps), mean of 5 seeds (precision/recall std $\le$0.04); $\tau_r$ minimises $r\cdot\mathrm{FN}+\mathrm{FP}$ on validation; $p$: paired $t$-test of F1 vs.\ $\tau_{\mathrm{F1}}$.}
 \label{tab:threshold}
 \end{table}
 
@@ -318,19 +318,19 @@ Steps 43--49 hold 15.6\% of test illicit transactions but 42\% of the 398 misses
 \paragraph{Failure cases.}
 In Table~\ref{tab:cases}, \#1 is a complete inversion ($s-\tau=-0.956$): \texttt{local\_48} (TreeSHAP $-$1.54 log-odds) and \texttt{local\_53}$=1.81$ ($-$1.53), above 99.7\% of illicit but at the 63rd percentile of licit training transactions, pull its score down; RF misses it too (0.04).
 \#2 (FN) and \#4 (FP) fall on either side of $\tau=0.97027$ ($s-\tau=-5.1{\times}10^{-4}$ and $+3.8{\times}10^{-5}$): they share 73 of 93 local features (within $10^{-4}$; L2 distance 4.1 vs.\ a median of 10.2 to licit training transactions) yet carry opposite labels.
-Label noise or entities reusing one wallet software are plausible but unverifiable causes, as Elliptic anonymises entities.
+Label noise or shared wallet software may explain this, unverifiably (entities are anonymised).
 \#3 is a confident FP ($s=0.99995$) on the illicit mode \texttt{local\_53}$=-0.49$ that RF scores 0.03.
 The ``unlabeled-like'' mechanism shows directly: among their 10 nearest training neighbours, licit FPs have 94\% unknown transactions, licit TNs 47\% (pool: 80\%).
 \textbf{Shared pattern}: errors stem from overlapping modes and post-shutdown drift, not capacity; the first fix is a few analyst-confirmed labels from the new period (active learning, \citealp{lorenz2020label}).
 
 \paragraph{Interpretability.}
 By exact TreeSHAP of \citet{lundberg2020treeshap} (mean $|$SHAP$|$ over test illicit transactions), \texttt{local\_53} (0.88 log-odds), \texttt{local\_47} and \texttt{local\_76} (0.56) dominate: the model uses the illicit mode of \S\ref{sec:eda}.
-For the top-scored true positive (tx 162428632, $s=0.99990$, RF 0.94), \texttt{local\_53}$=-0.49$ adds 1.23 log-odds, five other features 0.4--0.9 each.
+For the top true positive (tx 162428632, $s=0.99990$, RF 0.94), \texttt{local\_53}$=-0.49$ adds 1.23 log-odds, five others 0.4--0.9.
 An analyst escalates when the attribution sits on the known illicit mode and dismisses when a licit counterparty explains it: a reason to review, not proof.
 
 \paragraph{Practical impact.}
 At $\tau_{\mathrm{F1}}$, \ours{} raises 2,459 alerts in 15 steps (${\approx}$164 per step) and catches 65\% (${\approx}$704) of 1,083 illicit test transactions; 71\% of alerts are false (2.5 per catch).
-With 30 alerts per step (450 in total), \ours{} catches 218 illicit transactions (precision 0.48, 7.4$\times$ random review), supervised RF 239 and XGBoost 245: lacking illicit labels costs 21--27 catches per 450 reviews, so \ours{} suits cold-start triage.
+With 30 alerts per step, \ours{} catches 218 illicit transactions (precision 0.48, 7.4$\times$ random review), supervised RF 239 and XGBoost 245: lacking illicit labels costs 21--27 catches per 450 reviews, so \ours{} suits cold-start triage.
 
 % ---------------------------------------------------------------------------
 \section{Conclusion and Limitations}
@@ -351,7 +351,7 @@ Next: (i) after a drift alarm, query analyst labels for top-scored unlabeled tra
 \emph{Generalisation}: extreme fraud (e.g.\ one-off thefts) may not invert.
 
 \paragraph{Deployment considerations.}
-\emph{Concept drift}: illicit behaviour changed abruptly at step 43; audit the top 30 alerts per step and retrain when their precision falls below half of its deployment value, as scores alone do not reveal a collapse.
+\emph{Concept drift}: behaviour changed abruptly at step 43; audit the top 30 alerts per step and retrain when their precision halves, as scores alone hide a collapse.
 \emph{Inputs}: the unlabeled pool is every other on-chain transaction; 30 alerts per step is ${\approx}$3 reviews per working day.
 \emph{Latency, privacy}: ${\approx}1.5\,\mu$s per transaction; linking addresses to people is regulated.
 
